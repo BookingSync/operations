@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bundler/setup"
 require "operations"
 require "active_record"
@@ -12,7 +14,7 @@ ActiveRecord::Schema.define do
   end
 end
 
-class User < ActiveRecord::Base
+class User < ActiveRecord::Base # rubocop:disable Rails/ApplicationRecord
   validates :name, presence: true
 
   def self.localized_attr_name_for(name, locale)
@@ -32,7 +34,7 @@ RSpec.configure do |config|
   config.shared_context_metadata_behavior = :apply_to_host_groups
   config.filter_run_when_matching :focus
   config.disable_monkey_patching!
-  config.default_formatter = 'doc' if config.files_to_run.one?
+  config.default_formatter = "doc" if config.files_to_run.one?
   config.profile_examples = 10
   config.order = :random
   Kernel.srand config.seed

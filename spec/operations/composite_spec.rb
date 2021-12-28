@@ -15,7 +15,7 @@ RSpec.describe Operations::Composite do
   let(:operation) { ->(**) { Dry::Monads::Success(additional: :value) } }
   let(:contract) do
     Operations::Contract.build do
-      config.messages.load_paths << 'spec/fixtures/locale.yml'
+      config.messages.load_paths << "spec/fixtures/locale.yml"
       schema { required(:name).filled(:string) }
       rule { User.create!(name: "transaction test") }
     end
@@ -316,7 +316,10 @@ RSpec.describe Operations::Composite do
     context "when operation failed" do
       let(:params) { {} }
 
-      specify { expect { call! }.to raise_error Operations::Composite::OperationFailed, %r{text="is missing" path=\[:name\]} }
+      specify do
+        expect { call! }
+          .to raise_error Operations::Composite::OperationFailed, %r{text="is missing" path=\[:name\]}
+      end
     end
 
     it { is_expected.to be_success }

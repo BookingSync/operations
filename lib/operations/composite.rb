@@ -135,7 +135,9 @@ class Operations::Composite
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :after, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :form_model_map, Operations::Types::Hash.map(
-    Operations::Types::Coercible::Array.of(Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)),
+    Operations::Types::Coercible::Array.of(
+      Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)
+    ),
     Operations::Types::String
   ), default: proc { {} }
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }

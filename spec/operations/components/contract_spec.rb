@@ -5,7 +5,7 @@ RSpec.describe Operations::Components::Contract do
 
   let(:contract) do
     Operations::Contract.build do
-      config.messages.load_paths << 'spec/fixtures/locale.yml'
+      config.messages.load_paths << "spec/fixtures/locale.yml"
 
       schema do
         required(:name).filled(:string)

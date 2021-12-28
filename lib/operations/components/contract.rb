@@ -2,6 +2,7 @@
 
 require "operations/components/base"
 
+# Wraps contract call to adapt the result for further processing.
 class Operations::Components::Contract < Operations::Components::Base
   def call(params, context)
     contract_result = callable.call(params, **context)

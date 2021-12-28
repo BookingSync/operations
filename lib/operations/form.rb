@@ -28,7 +28,10 @@ class Operations::Form
     default: proc { {} },
     reader: :private
   option :messages,
-    type: Operations::Types::Hash.map(Operations::Types::Nil | Operations::Types::Coercible::Symbol, Operations::Types::Any),
+    type: Operations::Types::Hash.map(
+      Operations::Types::Nil | Operations::Types::Coercible::Symbol,
+      Operations::Types::Any
+    ),
     default: proc { {} },
     reader: :private
 

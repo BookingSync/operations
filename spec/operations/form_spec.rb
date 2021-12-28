@@ -33,7 +33,7 @@ RSpec.describe Operations::Form do
     stub_const("Dummy::Post", post_class)
   end
 
-  context "where there is a field with model_name attached" do
+  context "when there is a field with model_name attached" do
     let(:form_class) do
       Class.new(described_class) do
         attribute :name, model_name: "User"
@@ -181,8 +181,8 @@ RSpec.describe Operations::Form do
   end
 
   describe "#model_name" do
-    specify { expect(subject.model_name).to be_a(ActiveModel::Name) }
-    specify { expect(subject.model_name.to_s).to eq "Dummy::Form" }
+    specify { expect(form.model_name).to be_a(ActiveModel::Name) }
+    specify { expect(form.model_name.to_s).to eq "Dummy::Form" }
   end
 
   describe "#errors" do
@@ -193,7 +193,7 @@ RSpec.describe Operations::Form do
       }
     end
 
-    specify { expect(subject.errors).to be_a(ActiveModel::Errors) & be_empty }
+    specify { expect(form.errors).to be_a(ActiveModel::Errors) & be_empty }
 
     context "with messages provided" do
       let(:messages) do
@@ -203,8 +203,8 @@ RSpec.describe Operations::Form do
         }
       end
 
-      specify { expect(subject.errors).to be_present }
-      specify { expect(subject.errors.messages).to eq(name: %w[error1 error2], base: ["base1"]) }
+      specify { expect(form.errors).to be_present }
+      specify { expect(form.errors.messages).to eq(name: %w[error1 error2], base: ["base1"]) }
     end
 
     context "with codes provided" do
@@ -218,15 +218,15 @@ RSpec.describe Operations::Form do
         }
       end
 
-      specify { expect(subject.errors).to be_present }
-      specify { expect(subject.errors.messages).to eq(name: %w[error1 error2], base: ["base1"]) }
+      specify { expect(form.errors).to be_present }
+      specify { expect(form.errors.messages).to eq(name: %w[error1 error2], base: ["base1"]) }
     end
 
     context "with unknown attributes" do
       let(:messages) { { unknown: ["error"] } }
 
-      specify { expect(subject.errors).to be_blank }
-      specify { expect(subject.errors.messages).to eq({}) }
+      specify { expect(form.errors).to be_blank }
+      specify { expect(form.errors.messages).to eq({}) }
     end
 
     context "with nested errors" do

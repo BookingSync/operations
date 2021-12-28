@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "pp"
 require "dry-monads"
 require "dry/monads/do"
@@ -22,7 +24,6 @@ require "operation_contract"
 # Dry::Schema.load_extensions(:monads)
 # Dry::Validation.load_extensions(:monads)
 
-module Operations
-  class Error < StandardError; end
-  # Your code goes here...
+# Your code goes here...
+class Operations::Error < StandardError
 end

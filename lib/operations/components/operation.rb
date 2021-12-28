@@ -2,6 +2,7 @@
 
 require "operations/components/base"
 
+# Wraps operation component call to adapt to the further processing.
 class Operations::Components::Operation < Operations::Components::Base
   def call(params, context)
     context_args = context.values_at(*call_args(@callable, types: %i[req opt]))
