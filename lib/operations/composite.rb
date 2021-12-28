@@ -1,5 +1,12 @@
 # frozen_string_literal: true
 
+require "operations/components"
+require "operations/components/operation"
+require "operations/components/contract"
+require "operations/components/policies"
+require "operations/components/preconditions"
+require "operations/components/after"
+
 # This is an entry point interface for every operation in
 # the operations layer. Every operation instance consists of 4
 # components: contract, policy, preconditions and operation
@@ -10,7 +17,7 @@
 #
 #   repo = SomeRepo.new
 #
-#   operation = Operation::Composite.new(
+#   operation = Operations::Composite.new(
 #     OperationClass.new(repo: repo),
 #     contract: ContractClass.new(repo: repo),
 #     policies: PolicyClass.new,
@@ -36,7 +43,7 @@
 #
 #   class Namespace::OperationName
 #     def self.default
-#       @default ||= Operation::Composite.new(new, ...)
+#       @default ||= Operations::Composite.new(new, ...)
 #     end
 #   end
 #
@@ -101,10 +108,10 @@
 #    that can be replayed. Each callable object is expected to have the
 #    same method's signature as operation's `call` method.
 #
-# Every method in {Operation::Composite} returns {Operation::Result} instance,
+# Every method in {Operations::Composite} returns {Operations::Result} instance,
 # which contains all the artifacts and the information about the errors
 # should they ever happen.
-class Operation::Composite
+class Operations::Composite
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
   COMPONENTS = %i[contract policies preconditions operation after].freeze
@@ -122,20 +129,20 @@ class Operation::Composite
   class OperationFailed < StandardError
   end
 
-  param :operation, Types.Interface(:call)
-  option :contract, Types.Interface(:call)
-  option :policies, Types::Array.of(Types.Interface(:call))
-  option :preconditions, Types::Array.of(Types.Interface(:call)), default: -> { [] }
-  option :after, Types::Array.of(Types.Interface(:call)), default: -> { [] }
-  option :form_model_map, Types::Hash.map(
-    Types::Coercible::Array.of(Types::String | Types::Symbol | Types.Instance(Regexp)),
-    Types::String
+  param :operation, Operations::Types.Interface(:call)
+  option :contract, Operations::Types.Interface(:call)
+  option :policies, Operations::Types::Array.of(Operations::Types.Interface(:call))
+  option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :after, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :form_model_map, Operations::Types::Hash.map(
+    Operations::Types::Coercible::Array.of(Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)),
+    Operations::Types::String
   ), default: proc { {} }
-  option :form_base, Types::Class, default: proc { ::Operation::Form }
-  option :form_class, Types::Class, default: proc { build_form }
-  option :form_hydrator, Types.Interface(:call), default: proc { FORM_HYDRATOR }
-  option :error_reporter, Types.Interface(:call), default: proc { ERROR_REPORTER }
-  option :transaction, Types.Interface(:call), default: proc { TRANSACTION }
+  option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
+  option :form_class, Operations::Types::Class, default: proc { build_form }
+  option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
+  option :error_reporter, Operations::Types.Interface(:call), default: proc { ERROR_REPORTER }
+  option :transaction, Operations::Types.Interface(:call), default: proc { TRANSACTION }
 
   # A short-cut to initialize operation by convention:
   #
@@ -147,10 +154,10 @@ class Operation::Composite
   # All the dependencies are passed to every component's
   # initializer, so they'd be better tolerant to unknown
   # dependencies. Luckily it is easily achievable with {Dry::Initializer}.
-  # This plays really well with {Operation::Convenience}
+  # This plays really well with {Operations::Convenience}
   #
   # @see {https://dry-rb.org/gems/dry-initializer/3.0/ for details}
-  # @see Operation::Convenience
+  # @see Operations::Convenience
   def self.build(operation, contract = nil, **deps)
     options = {
       contract: (contract || operation::Contract).new(**deps),
@@ -204,7 +211,7 @@ class Operation::Composite
   end
 
   # These 3 methods added for convenience. They return boolean result
-  # instead of Operation::Result. True on success and false on failure.
+  # instead of Operations::Result. True on success and false on failure.
   %i[callable allowed possible].each do |method|
     define_method "#{method}?" do |**kwargs|
       public_send(method, **kwargs).success?
@@ -230,7 +237,7 @@ class Operation::Composite
 
   def component(identifier)
     (@components ||= {})[identifier] = begin
-      "::Operation::Components::#{identifier.to_s.camelize}".constantize.new(
+      "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
         send(identifier),
         message_resolver: contract.message_resolver,
         error_reporter: error_reporter,
@@ -281,7 +288,7 @@ class Operation::Composite
   end
 
   def build_form
-    ::Operation::FormBuilder
+    ::Operations::Form::Builder
       .new(base_class: form_base)
       .build(
         key_map: contract.class.schema.key_map,

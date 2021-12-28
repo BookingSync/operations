@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Composite do
+RSpec.describe Operations::Composite do
   subject(:composite) do
     described_class.new(
       operation,
@@ -16,9 +14,10 @@ RSpec.describe Operation::Composite do
 
   let(:operation) { ->(**) { Dry::Monads::Success(additional: :value) } }
   let(:contract) do
-    Operation::Contract.build do
+    Operations::Contract.build do
+      config.messages.load_paths << 'spec/fixtures/locale.yml'
       schema { required(:name).filled(:string) }
-      rule { Amenity.create!(key: "transaction test") }
+      rule { User.create!(name: "transaction test") }
     end
   end
   let(:policy) { ->(admin:, **) { admin } }
@@ -39,7 +38,7 @@ RSpec.describe Operation::Composite do
         )
       end
 
-      it { is_expected_block.to raise_error(KeyError) }
+      specify { expect { composite }.to raise_error(KeyError) }
     end
   end
 
@@ -74,7 +73,7 @@ RSpec.describe Operation::Composite do
         policies: [an_instance_of(operation_class::Policy) & have_attributes(repo: repo)],
         preconditions: [],
         after: [],
-        form_class: be < Operation::Form
+        form_class: be < Operations::Form
       )
     end
 
@@ -95,7 +94,7 @@ RSpec.describe Operation::Composite do
           policies: [an_instance_of(operation_class::Policy) & have_attributes(repo: repo)],
           preconditions: [an_instance_of(operation_class::Precondition) & have_attributes(repo: repo)],
           after: [],
-          form_class: be < Operation::Form
+          form_class: be < Operations::Form
         )
       end
     end
@@ -117,7 +116,7 @@ RSpec.describe Operation::Composite do
           policies: [an_instance_of(operation_class::Policy) & have_attributes(repo: repo)],
           preconditions: [],
           after: [],
-          form_class: be < Operation::Form
+          form_class: be < Operations::Form
         )
       end
     end
@@ -127,7 +126,7 @@ RSpec.describe Operation::Composite do
     subject(:form_class) { composite.form_class }
 
     let(:contract) do
-      Operation::Contract.build do
+      Operations::Contract.build do
         schema do
           required(:name).filled(:string)
           required(:age).filled(:integer)
@@ -165,7 +164,7 @@ RSpec.describe Operation::Composite do
       let(:params) { {} }
 
       it "returns a failed validation result" do
-        expect { call }.not_to change { Amenity.count }
+        expect { call }.not_to change { User.count }
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -185,7 +184,7 @@ RSpec.describe Operation::Composite do
       let(:context) { { admin: false } }
 
       it "returns a failed policy result" do
-        expect { call }.not_to change { Amenity.count }
+        expect { call }.not_to change { User.count }
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -196,7 +195,7 @@ RSpec.describe Operation::Composite do
             after: [],
             errors: have_attributes(
               to_h: { nil => [
-                text: "Current user is not permitted to perform the operation",
+                text: "Unauthorized",
                 code: :unauthorized
               ] }
             )
@@ -209,7 +208,7 @@ RSpec.describe Operation::Composite do
       let(:policies) { [policy, additional_policy] }
 
       it "returns a failed policy result" do
-        expect { call }.not_to change { Amenity.count }
+        expect { call }.not_to change { User.count }
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -220,7 +219,7 @@ RSpec.describe Operation::Composite do
             after: [],
             errors: have_attributes(
               to_h: { nil => [
-                text: "Current user is not permitted to perform the operation",
+                text: "Unauthorized",
                 code: :unauthorized
               ] }
             )
@@ -232,7 +231,7 @@ RSpec.describe Operation::Composite do
       let(:context) { { admin: true, error: "Error" } }
 
       it "returns a failed preconditions result" do
-        expect { call }.not_to change { Amenity.count }
+        expect { call }.not_to change { User.count }
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -253,7 +252,7 @@ RSpec.describe Operation::Composite do
       let(:context) { { admin: true } }
 
       it "returns a failed validation result" do
-        expect { call }.not_to change { Amenity.count }
+        expect { call }.not_to change { User.count }
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -276,7 +275,7 @@ RSpec.describe Operation::Composite do
         let(:operation) { ->(**) { Dry::Monads::Failure("Error") } }
 
         it "returns a normalized operation result" do
-          expect { call }.not_to change { Amenity.count }
+          expect { call }.not_to change { User.count }
           expect(call)
             .to be_failure
             .and have_attributes(
@@ -293,7 +292,7 @@ RSpec.describe Operation::Composite do
       end
 
       it "returns a successful result" do
-        expect { call }.to change { Amenity.count }.by(1)
+        expect { call }.to change { User.count }.by(1)
         expect(call)
           .to be_success
           .and have_attributes(
@@ -317,7 +316,7 @@ RSpec.describe Operation::Composite do
     context "when operation failed" do
       let(:params) { {} }
 
-      it { is_expected_block.to raise_error Operation::Composite::OperationFailed, %r{text="is missing" path=\[:name\]} }
+      specify { expect { call! }.to raise_error Operations::Composite::OperationFailed, %r{text="is missing" path=\[:name\]} }
     end
 
     it { is_expected.to be_success }
@@ -361,7 +360,7 @@ RSpec.describe Operation::Composite do
             after: [],
             errors: have_attributes(
               to_h: { nil => [
-                text: "Current user is not permitted to perform the operation",
+                text: "Unauthorized",
                 code: :unauthorized
               ] }
             )
@@ -435,7 +434,7 @@ RSpec.describe Operation::Composite do
             after: [],
             errors: have_attributes(
               to_h: { nil => [
-                text: "Current user is not permitted to perform the operation",
+                text: "Unauthorized",
                 code: :unauthorized
               ] }
             )

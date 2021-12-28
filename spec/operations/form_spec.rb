@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Form do
+RSpec.describe Operations::Form do
   subject(:form) { form_class.new(attributes, messages: messages) }
 
   let(:form_class) do
@@ -38,7 +36,7 @@ RSpec.describe Operation::Form do
   context "where there is a field with model_name attached" do
     let(:form_class) do
       Class.new(described_class) do
-        attribute :name, model_name: "Rental"
+        attribute :name, model_name: "User"
       end
     end
 
@@ -183,8 +181,8 @@ RSpec.describe Operation::Form do
   end
 
   describe "#model_name" do
-    its(:model_name) { is_expected.to be_a(ActiveModel::Name) }
-    its(:"model_name.to_s") { is_expected.to eq "Dummy::Form" }
+    specify { expect(subject.model_name).to be_a(ActiveModel::Name) }
+    specify { expect(subject.model_name.to_s).to eq "Dummy::Form" }
   end
 
   describe "#errors" do
@@ -195,7 +193,7 @@ RSpec.describe Operation::Form do
       }
     end
 
-    its(:errors) { is_expected.to be_a(ActiveModel::Errors) & be_empty }
+    specify { expect(subject.errors).to be_a(ActiveModel::Errors) & be_empty }
 
     context "with messages provided" do
       let(:messages) do
@@ -205,8 +203,8 @@ RSpec.describe Operation::Form do
         }
       end
 
-      its(:errors) { is_expected.to be_present }
-      its(:"errors.messages") { is_expected.to eq(name: %w[error1 error2], base: ["base1"]) }
+      specify { expect(subject.errors).to be_present }
+      specify { expect(subject.errors.messages).to eq(name: %w[error1 error2], base: ["base1"]) }
     end
 
     context "with codes provided" do
@@ -220,15 +218,15 @@ RSpec.describe Operation::Form do
         }
       end
 
-      its(:errors) { is_expected.to be_present }
-      its(:"errors.messages") { is_expected.to eq(name: %w[error1 error2], base: ["base1"]) }
+      specify { expect(subject.errors).to be_present }
+      specify { expect(subject.errors.messages).to eq(name: %w[error1 error2], base: ["base1"]) }
     end
 
     context "with unknown attributes" do
       let(:messages) { { unknown: ["error"] } }
 
-      its(:errors) { is_expected.to be_blank }
-      its(:"errors.messages") { is_expected.to eq({}) }
+      specify { expect(subject.errors).to be_blank }
+      specify { expect(subject.errors.messages).to eq({}) }
     end
 
     context "with nested errors" do

@@ -2,14 +2,14 @@
 
 # This class implements Rails form object compatibility layer
 # It is possib;e to configure form object attributes automatically
-# basing on Dry Schema user {Operation::FormBuilder}
+# basing on Dry Schema user {Operations::Form::Builder}
 # @example
 #
-#   class AuthorForm < Operation::Form
+#   class AuthorForm < Operations::Form
 #     attribute :name
 #   end
 #
-#   class PostForm < Operation::Form
+#   class PostForm < Operations::Form
 #     attribute :title
 #     attribute :tags, collection: true
 #     attribute :author, form: AuthorForm
@@ -18,24 +18,24 @@
 #   PostForm.new({ tags: ["foobar"], author: { name: "Batman" } })
 #   # => #<PostForm attributes={:title=>nil, :tags=>["foobar"], :author=>#<AuthorForm attributes={:name=>"Batman"}>}>
 #
-# @see Operation::FormBuilder
-class Operation::Form
+# @see Operations::Form::Builder
+class Operations::Form
   extend Dry::Initializer
   include Dry::Equalizer(:attributes, :errors)
 
   param :data,
-    type: Types::Hash.map(Types::Symbol, Types::Any),
+    type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any),
     default: proc { {} },
     reader: :private
   option :messages,
-    type: Types::Hash.map(Types::Nil | Types::Coercible::Symbol, Types::Any),
+    type: Operations::Types::Hash.map(Operations::Types::Nil | Operations::Types::Coercible::Symbol, Operations::Types::Any),
     default: proc { {} },
     reader: :private
 
   class_attribute :attributes, instance_accessor: false, default: {}
 
   def self.attribute(name, **options)
-    attribute = Operation::Form::Attribute.new(name, **options)
+    attribute = Operations::Form::Attribute.new(name, **options)
 
     self.attributes = attributes.merge(
       attribute.name => attribute
@@ -67,14 +67,14 @@ class Operation::Form
   end
 
   def attributes
-    self.class.attributes.keys.index_with do |name|
-      read_attribute(name)
+    self.class.attributes.keys.to_h do |name|
+      [name, read_attribute(name)]
     end
   end
 
   def assigned_attributes
-    (self.class.attributes.keys & data.keys).index_with do |name|
-      read_attribute(name)
+    (self.class.attributes.keys & data.keys).to_h do |name|
+      [name, read_attribute(name)]
     end
   end
 

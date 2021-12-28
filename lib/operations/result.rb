@@ -5,17 +5,17 @@
 # (the initial one merged with the result of contract and operation routine
 # execution).
 # Also able to spawn a form object basing on the operation params and errors.
-class Operation::Result
+class Operations::Result
   include Dry::Monads[:result]
   include Dry::Equalizer(:operation, :component, :params, :context, :after, :errors)
   extend Dry::Initializer
 
-  option :operation, type: Types::Instance(Operation::Composite), optional: true
-  option :component, type: Types::Symbol.enum(*Operation::Composite::COMPONENTS)
-  option :params, type: Types::Hash.map(Types::Symbol, Types::Any)
-  option :context, type: Types::Hash.map(Types::Symbol, Types::Any)
-  option :after, type: Types::Array.of(Types::Any), default: proc { [] }
-  option :errors, type: Types.Interface(:call) | Types::Instance(Dry::Validation::MessageSet),
+  option :operation, type: Operations::Types::Instance(Operations::Composite), optional: true
+  option :component, type: Operations::Types::Symbol.enum(*Operations::Composite::COMPONENTS)
+  option :params, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
+  option :context, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
+  option :after, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }
+  option :errors, type: Operations::Types.Interface(:call) | Operations::Types::Instance(Dry::Validation::MessageSet),
     default: proc { Dry::Validation::MessageSet.new([]).freeze }
 
   # Instantiates a new result with the given fields updated
@@ -32,19 +32,19 @@ class Operation::Result
   end
 
   def success?
-    !failure?
+    errors.empty?
   end
   alias_method :callable?, :success?
 
   def failure?
-    errors.present?
+    !success?
   end
 
   # Checks if ANY of the passed precondition or policy codes have failed
   # If nothing is passed - checks that ANY precondition or policy have failed
   def failed_precheck?(*names)
     failure? &&
-      component.in?(%i[policies preconditions]) &&
+      %i[policies preconditions].include?(component) &&
       (names.blank? || errors_with_code?(*names))
   end
   alias_method :failed_prechecks?, :failed_precheck?

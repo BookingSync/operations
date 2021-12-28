@@ -1,15 +1,17 @@
 # frozen_string_literal: true
 
+require "operations/components/base"
+
 # This component handles `after:` callbacks passed to the
 # composite. Every `after:` entry is called in a separate
 # transaction and any exception is rescued here so the
 # result of the whole operation is not affected.
 # If there is a failure in any entry, it is reported with
 # `error_reporter` proc.
-class Operation::Components::After < Operation::Components::Base
+class Operations::Components::After < Operations::Components::Base
   include Dry::Monads::Do.for(:call_entry)
 
-  param :callable, type: Types::Array.of(Types.Interface(:call))
+  param :callable, type: Operations::Types::Array.of(Operations::Types.Interface(:call))
 
   def call(params, context)
     after_results = callable.map do |entry|

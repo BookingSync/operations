@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Components::Policies do
+RSpec.describe Operations::Components::Policies do
   subject(:component) { described_class.new(policies, message_resolver: message_resolver) }
 
   let(:policy) { ->(admin:, **) { admin } }
   let(:additional_policy) { ->(owner:, **) { owner } }
   let(:policies) { [policy] }
-  let(:message_resolver) { Operation::Contract::MessagesResolver.new(backend) }
+  let(:message_resolver) { Operations::Contract::MessagesResolver.new(backend) }
   let(:backend) { Dry::Schema::Messages::YAML.build.merge(translations) }
   let(:translations) do
     {

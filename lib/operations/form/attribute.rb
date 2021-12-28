@@ -3,14 +3,14 @@
 # The main purpose is to infer attribute properties from the
 # related model. We need it to automate form rendering for the
 # legacy UI.
-class Operation::Form::Attribute
+class Operations::Form::Attribute
   extend Dry::Initializer
   include Dry::Equalizer(:name, :collection, :form, :model_name)
 
-  param :name, type: Types::Coercible::Symbol
-  option :collection, type: Types::Bool, optional: true, default: proc { false }
-  option :form, type: Types::Class, optional: true
-  option :model_name, type: Types::String, optional: true
+  param :name, type: Operations::Types::Coercible::Symbol
+  option :collection, type: Operations::Types::Bool, optional: true, default: proc { false }
+  option :form, type: Operations::Types::Class, optional: true
+  option :model_name, type: Operations::Types::String, optional: true
 
   def model_type
     @model_type ||= owning_model.type_for_attribute(string_name) if model_name

@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 # Traverses the passed {Dry::Schema::KeyMap} and generates
-# {Operation::Form} classes on the fly. Handles nested structures.
+# {Operations::Form} classes on the fly. Handles nested structures.
 #
-# @see Operation::Form
-class Operation::FormBuilder
+# @see Operations::Form
+class Operations::Form::Builder
   extend Dry::Initializer
 
   NESTED_ATTRIBUTES_SUFFIX = %r{_attributes\z}.freeze
 
-  option :base_class, Types::Instance(Class)
+  option :base_class, Operations::Types::Instance(Class)
 
   def build(key_map:, namespace:, class_name:, model_map:)
     return namespace.const_get(class_name) if namespace && class_name && namespace.const_defined?(class_name)

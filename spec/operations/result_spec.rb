@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Result do
+RSpec.describe Operations::Result do
   subject(:result) do
     described_class.new(
       operation: operation,
@@ -13,7 +11,7 @@ RSpec.describe Operation::Result do
     )
   end
 
-  let(:operation) { instance_double(Operation::Composite) }
+  let(:operation) { instance_double(Operations::Composite) }
   let(:component) { :contract }
   let(:params) { {} }
   let(:context) { {} }
@@ -22,7 +20,7 @@ RSpec.describe Operation::Result do
 
   before do
     allow(operation).to receive(:is_a?).and_return(false)
-    allow(operation).to receive(:is_a?).with(Operation::Composite).and_return(true)
+    allow(operation).to receive(:is_a?).with(Operations::Composite).and_return(true)
   end
 
   describe "#==" do
@@ -159,12 +157,14 @@ RSpec.describe Operation::Result do
   end
 
   describe "#to_monad" do
-    its(:to_monad) { is_expected.to eq Dry::Monads::Success(result) }
+    subject(:to_monad) { result.to_monad }
+
+    it { is_expected.to eq Dry::Monads::Success(result) }
 
     context "with errors" do
       let(:errors) { Dry::Validation::MessageSet.new([message]) }
 
-      its(:to_monad) { is_expected.to eq Dry::Monads::Failure(result) }
+      it { is_expected.to eq Dry::Monads::Failure(result) }
     end
   end
 
@@ -173,7 +173,7 @@ RSpec.describe Operation::Result do
 
     let(:operation) do
       instance_double(
-        Operation::Composite,
+        Operations::Composite,
         form_class: form_class,
         form_hydrator: lambda do |form_class, params, **context|
           { form_class: form_class, params: params, context: context }

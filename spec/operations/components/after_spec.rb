@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Components::After do
+RSpec.describe Operations::Components::After do
   subject(:component) { described_class.new(after, transaction: transaction, error_reporter: error_reporter) }
 
   let(:after) do

@@ -2,19 +2,19 @@
 
 # An ancestor for all the operation components.
 # Holds shared methods.
-class Operation::Components::Base
+class Operations::Components::Base
   include Dry::Monads[:result]
   extend Dry::Initializer
 
-  param :callable, type: Types.Interface(:call)
-  option :message_resolver, type: Types.Interface(:call), optional: true
-  option :error_reporter, type: Types.Interface(:call), optional: true
-  option :transaction, type: Types.Interface(:call), optional: true
+  param :callable, type: Operations::Types.Interface(:call)
+  option :message_resolver, type: Operations::Types.Interface(:call), optional: true
+  option :error_reporter, type: Operations::Types.Interface(:call), optional: true
+  option :transaction, type: Operations::Types.Interface(:call), optional: true
 
   private
 
   def result(**options)
-    ::Operation::Result.new(
+    ::Operations::Result.new(
       component: self.class.name.demodulize.underscore.to_sym,
       **options
     )
@@ -23,7 +23,7 @@ class Operation::Components::Base
   def call_args(callable, types:)
     (@call_args ||= {})[[callable, types]] ||= begin
       method = callable.respond_to?(:parameters) ? callable : callable.method(:call)
-      # calling super_method here because `Operation::Convenience`
+      # calling super_method here because `Operations::Convenience`
       # calls `include Dry::Monads::Do.for(:call)` which creates
       # a delegator method around the original one.
       method = method.super_method if method.parameters == [%i[rest *], %i[block &]]

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "operations/components/prechecks"
+
 # We are looking for the first policy failure to return because
 # it does not make sense to check for all policy failures. One is
 # more than enough to know that we are not allowed to call the operation.
@@ -10,7 +12,7 @@
 # a Hash containing `:error` key.
 #
 # Successful policies return either `true` or `Success` monad.
-class Operation::Components::Policies < Operation::Components::Prechecks
+class Operations::Components::Policies < Operations::Components::Prechecks
   def call(params, context)
     first_failure = callable.lazy.filter_map do |entry|
       result_failure(entry.call(**context), entry)

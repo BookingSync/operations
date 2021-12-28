@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # This module helps to follow conventions. Work best with
-# {Operation::Composite.build}
+# {Operations::Composite.build}
 #
 # Unders the hood it defines classes in accordance to the
 # nesting convenience. It is always possible to use this module
@@ -10,7 +10,7 @@
 # @example
 #
 #   class Namespace::OperationName
-#     extend Operation::Convenience
+#     extend Operations::Convenience
 #
 #     contract do
 #       params { ... }
@@ -26,16 +26,16 @@
 #     end
 #   end
 #
-# @see Operation::Composite.build
+# @see Operations::Composite.build
 #
-module Operation::Convenience
+module Operations::Convenience
   def self.extended(mod)
     mod.include Dry::Monads[:result]
     mod.include Dry::Monads::Do.for(:call)
     mod.extend Dry::Initializer
   end
 
-  def contract(prefix = nil, from: Operation::Contract, &block)
+  def contract(prefix = nil, from: OperationContract, &block)
     contract = Class.new(from, &block)
     contract.config.messages.namespace = name.underscore
     const_set("#{prefix.to_s.camelize}Contract", contract)

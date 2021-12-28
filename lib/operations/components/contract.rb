@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-class Operation::Components::Contract < Operation::Components::Base
+require "operations/components/base"
+
+class Operations::Components::Contract < Operations::Components::Base
   def call(params, context)
     contract_result = callable.call(params, **context)
 

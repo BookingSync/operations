@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Components::Operation do
+RSpec.describe Operations::Components::Operation do
   subject(:component) { described_class.new(operation, message_resolver: message_resolver) }
 
   let(:operation) { ->(entity, **params) { Dry::Monads::Success({ passed: [entity, params] }) } }
-  let(:message_resolver) { Operation::Contract::MessagesResolver.new(backend) }
+  let(:message_resolver) { Operations::Contract::MessagesResolver.new(backend) }
   let(:backend) { Dry::Schema::Messages::YAML.build.merge(translations) }
   let(:translations) do
     {

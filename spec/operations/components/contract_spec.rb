@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Components::Contract do
+RSpec.describe Operations::Components::Contract do
   subject(:component) { described_class.new(contract) }
 
   let(:contract) do
-    Operation::Contract.build do
+    Operations::Contract.build do
+      config.messages.load_paths << 'spec/fixtures/locale.yml'
+
       schema do
         required(:name).filled(:string)
       end

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-class Operation::Components::Operation < Operation::Components::Base
+require "operations/components/base"
+
+class Operations::Components::Operation < Operations::Components::Base
   def call(params, context)
     context_args = context.values_at(*call_args(@callable, types: %i[req opt]))
     operation_result = callable.call(*context_args, **params)

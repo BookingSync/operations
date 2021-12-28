@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "operations/components/prechecks"
+
 # We check all the precondition failures to return all the codes to
 # the user at once. This provides a better UX, user is able to fix
 # everything at once instead of getting messages one by one. This is
@@ -14,7 +16,7 @@
 #
 # Successful preconditions returns either nil or an empty array or a
 # `Success` monad.
-class Operation::Components::Preconditions < Operation::Components::Prechecks
+class Operations::Components::Preconditions < Operations::Components::Prechecks
   def call(params, context)
     failures = callable.flat_map do |entry|
       results = Array.wrap(entry.call(**context))

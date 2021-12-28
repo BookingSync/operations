@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::FormBuilder do
-  subject(:form_builder) { described_class.new(base_class: Operation::Form) }
+RSpec.describe Operations::Form::Builder do
+  subject(:form_builder) { described_class.new(base_class: Operations::Form) }
 
   describe "#build" do
     subject(:form_class) do
@@ -48,7 +46,7 @@ RSpec.describe Operation::FormBuilder do
     let(:model_map) { { ["name"] => "Dummy1", ["translations", %r{singular|plural}] => "Dummy2" } }
 
     it "defines attributes tree correctly" do
-      expect(form_class).to be < Operation::Form
+      expect(form_class).to be < Operations::Form
       expect(form_class.name).to eq("DummyNamespace::MyForm")
       expect(form_class.attributes).to match(
         name: have_attributes(collection: false, form: nil, model_name: "Dummy1"),

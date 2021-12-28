@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require "operations/components/base"
+
 # Contains common logic for policies and preconditions.
-class Operation::Components::Prechecks < Operation::Components::Base
-  param :callable, type: Types::Array.of(Types.Interface(:call))
+class Operations::Components::Prechecks < Operations::Components::Base
+  param :callable, type: Operations::Types::Array.of(Operations::Types.Interface(:call))
 
   def required_context
     @required_context ||= required_kwargs | context_keys

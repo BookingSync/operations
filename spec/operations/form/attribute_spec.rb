@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-
-RSpec.describe Operation::Form::Attribute do
+RSpec.describe Operations::Form::Attribute do
   subject(:attribute) { described_class.new(name, **attribute_options) }
 
   let(:name) { "name" }
@@ -14,7 +12,7 @@ RSpec.describe Operation::Form::Attribute do
     it { is_expected.to be_nil }
 
     context "with model_name present" do
-      let(:attribute_options) { { model_name: "Rental" } }
+      let(:attribute_options) { { model_name: "User" } }
 
       it { is_expected.to have_attributes(type: :string) }
     end
@@ -26,7 +24,7 @@ RSpec.describe Operation::Form::Attribute do
     it { is_expected.to be_nil }
 
     context "with model_name present" do
-      let(:attribute_options) { { model_name: "Rental" } }
+      let(:attribute_options) { { model_name: "User" } }
 
       it { is_expected.to eq "Name" }
     end
@@ -38,9 +36,9 @@ RSpec.describe Operation::Form::Attribute do
     it { is_expected.to eq [] }
 
     context "with model_name present" do
-      let(:attribute_options) { { model_name: "Rental" } }
+      let(:attribute_options) { { model_name: "User" } }
 
-      it { is_expected.to eq(Rental.validators_on(:name)) }
+      it { is_expected.to eq(User.validators_on(:name)) }
     end
   end
 
@@ -50,7 +48,7 @@ RSpec.describe Operation::Form::Attribute do
     it { is_expected.to be_nil }
 
     context "with model_name present" do
-      let(:attribute_options) { { model_name: "Rental" } }
+      let(:attribute_options) { { model_name: "User" } }
 
       it { is_expected.to eq "name_fr" }
     end

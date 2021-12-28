@@ -1,0 +1,10 @@
+en:
+  operations:
+    errors:
+      rules:
+        unauthorized: "Unauthorized"
+
+fr:
+  operations:
+    errors:
+      key?: "est manquant"
