@@ -20,7 +20,6 @@ require "operations/result"
 require "operations/form"
 require "operations/form/attribute"
 require "operations/form/builder"
-require "operation_contract"
 
 # Dry::Schema.load_extensions(:monads)
 # Dry::Validation.load_extensions(:monads)
