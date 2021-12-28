@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # This module helps to follow conventions. Work best with
-# {Operations::Composite.build}
+# {Operations::Command.build}
 #
 # Unders the hood it defines classes in accordance to the
 # nesting convenience. It is always possible to use this module
@@ -26,7 +26,7 @@
 #     end
 #   end
 #
-# @see Operations::Composite.build
+# @see Operations::Command.build
 #
 module Operations::Convenience
   def self.extended(mod)
