@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Operations::Composite do
+RSpec.describe Operations::Command do
   subject(:composite) do
     described_class.new(
       operation,
@@ -318,7 +318,7 @@ RSpec.describe Operations::Composite do
 
       specify do
         expect { call! }
-          .to raise_error Operations::Composite::OperationFailed, %r{text="is missing" path=\[:name\]}
+          .to raise_error Operations::Command::OperationFailed, %r{text="is missing" path=\[:name\]}
       end
     end
 

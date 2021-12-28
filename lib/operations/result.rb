@@ -10,8 +10,8 @@ class Operations::Result
   include Dry::Equalizer(:operation, :component, :params, :context, :after, :errors)
   extend Dry::Initializer
 
-  option :operation, type: Operations::Types::Instance(Operations::Composite), optional: true
-  option :component, type: Operations::Types::Symbol.enum(*Operations::Composite::COMPONENTS)
+  option :operation, type: Operations::Types::Instance(Operations::Command), optional: true
+  option :component, type: Operations::Types::Symbol.enum(*Operations::Command::COMPONENTS)
   option :params, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
   option :context, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
   option :after, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }

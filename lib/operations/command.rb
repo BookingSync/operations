@@ -17,7 +17,7 @@ require "operations/components/after"
 #
 #   repo = SomeRepo.new
 #
-#   operation = Operations::Composite.new(
+#   operation = Operations::Command.new(
 #     OperationClass.new(repo: repo),
 #     contract: ContractClass.new(repo: repo),
 #     policies: PolicyClass.new,
@@ -43,7 +43,7 @@ require "operations/components/after"
 #
 #   class Namespace::OperationName
 #     def self.default
-#       @default ||= Operations::Composite.new(new, ...)
+#       @default ||= Operations::Command.new(new, ...)
 #     end
 #   end
 #
@@ -108,10 +108,10 @@ require "operations/components/after"
 #    that can be replayed. Each callable object is expected to have the
 #    same method's signature as operation's `call` method.
 #
-# Every method in {Operations::Composite} returns {Operations::Result} instance,
+# Every method in {Operations::Command} returns {Operations::Result} instance,
 # which contains all the artifacts and the information about the errors
 # should they ever happen.
-class Operations::Composite
+class Operations::Command
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
   COMPONENTS = %i[contract policies preconditions operation after].freeze

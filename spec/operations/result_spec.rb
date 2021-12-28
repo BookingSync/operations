@@ -11,7 +11,7 @@ RSpec.describe Operations::Result do
     )
   end
 
-  let(:operation) { instance_double(Operations::Composite) }
+  let(:operation) { instance_double(Operations::Command) }
   let(:component) { :contract }
   let(:params) { {} }
   let(:context) { {} }
@@ -20,7 +20,7 @@ RSpec.describe Operations::Result do
 
   before do
     allow(operation).to receive(:is_a?).and_return(false)
-    allow(operation).to receive(:is_a?).with(Operations::Composite).and_return(true)
+    allow(operation).to receive(:is_a?).with(Operations::Command).and_return(true)
   end
 
   describe "#==" do
@@ -173,7 +173,7 @@ RSpec.describe Operations::Result do
 
     let(:operation) do
       instance_double(
-        Operations::Composite,
+        Operations::Command,
         form_class: form_class,
         form_hydrator: lambda do |form_class, params, **context|
           { form_class: form_class, params: params, context: context }
