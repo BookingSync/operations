@@ -21,7 +21,21 @@ class Operations::Contract < Dry::Validation::Contract
     rules.unshift(rules.pop)
   end
 
+  def self.ensure_presence(context_key, field: "#{context_key}_id")
+    rule do |context:|
+      next if context[context_key] || schema_error?(field)
+
+      if key?(field)
+        key(field).failure(:not_found, entity_name: context_key.to_s.humanize)
+      else
+        key(field).failure(:key?)
+      end
+    end
+  end
+
   def call(input, **initial_context)
+    input = input.to_h if input.respond_to?(:to_h)
+
     super(input, initial_context)
   end
 end
