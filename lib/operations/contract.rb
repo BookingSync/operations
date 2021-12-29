@@ -34,8 +34,6 @@ class Operations::Contract < Dry::Validation::Contract
   end
 
   def call(input, **initial_context)
-    input = input.to_h if input.respond_to?(:to_h)
-
     super(input, initial_context)
   end
 end

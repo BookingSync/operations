@@ -185,7 +185,7 @@ class Operations::Command
   # executes the operation routine.
   # The whole process always happens inside of a DB transaction.
   def call(params, **context)
-    operation_result(unwrap_monad(call_monad(params, context)))
+    operation_result(unwrap_monad(call_monad(params.to_h, context)))
   end
 
   # Works the same way as `call` but raises an exception on operation failure.
@@ -199,17 +199,17 @@ class Operations::Command
   # Checks if the operation is possible to call in the current context.
   # Performs both: policy and preconditions checks.
   def callable(params = EMPTY_HASH, **context)
-    operation_result(unwrap_monad(callable_monad(component(:contract).call(params, context))))
+    operation_result(unwrap_monad(callable_monad(component(:contract).call(params.to_h, context))))
   end
 
   # Works the same way as `callable` but checks only the policy.
   def allowed(params = EMPTY_HASH, **context)
-    operation_result(component(:policies).call(params, context))
+    operation_result(component(:policies).call(params.to_h, context))
   end
 
   # Works the same way as `callable` but checks only preconditions.
   def possible(params = EMPTY_HASH, **context)
-    operation_result(component(:preconditions).call(params, context))
+    operation_result(component(:preconditions).call(params.to_h, context))
   end
 
   # These 3 methods added for convenience. They return boolean result
