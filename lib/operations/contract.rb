@@ -26,8 +26,8 @@ class Operations::Contract < Dry::Validation::Contract
       next if context[context_key] || schema_error?(field)
 
       if key?(field)
-        key(field).failure(:not_found, entity_name: context_key.to_s.humanize) unless optional
-      else
+        key(field).failure(:not_found, entity_name: context_key.to_s.humanize)
+      elsif !optional
         key(field).failure(:key?)
       end
     end
