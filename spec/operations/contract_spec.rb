@@ -59,5 +59,25 @@ RSpec.describe Operations::Contract do
 
       it { is_expected.to be_empty }
     end
+
+    context "when :optional" do
+      let(:contract) do
+        Class.new(described_class) do
+          config.messages.load_paths << "spec/fixtures/locale.yml"
+
+          params do
+            optional(:user_id).filled(:integer)
+          end
+
+          ensure_presence :user, optional: true
+        end
+      end
+
+      context "when id is valid" do
+        let(:params) { { user_id: 42 } }
+
+        it { is_expected.to be_empty }
+      end
+    end
   end
 end
