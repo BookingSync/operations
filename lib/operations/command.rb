@@ -262,7 +262,7 @@ class Operations::Command
 
   def call_monad(params, context)
     result = transaction.call do
-      yield contract_result = validate_monad(params, context)
+      contract_result = yield validate_monad(params, context)
       yield component(:operation).call(contract_result.params, contract_result.context)
     end
 
