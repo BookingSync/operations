@@ -325,6 +325,121 @@ RSpec.describe Operations::Command do
     it { is_expected.to be_success }
   end
 
+  describe "#validate" do
+    subject(:validate) { composite.validate(params, **context) }
+
+    let(:context) { { admin: true, error: nil } }
+    let(:params) { { name: "TEST" } }
+
+    it "returns a successful result" do
+      expect(validate)
+        .to be_success
+        .and have_attributes(
+          operation: composite,
+          component: :contract,
+          params: { name: "TEST" },
+          context: { admin: true, error: nil },
+          after: [],
+          errors: be_empty
+        )
+    end
+
+    context "with invalid params and sufficient context" do
+      let(:params) { { name: nil } }
+
+      it "returns a failed validation result" do
+        expect(validate)
+          .to be_failure
+          .and have_attributes(
+            operation: composite,
+            component: :contract,
+            params: { name: nil },
+            context: { admin: true, error: nil },
+            after: [],
+            errors: have_attributes(
+              to_h: { name: ["must be a string"] }
+            )
+          )
+      end
+    end
+
+    context "with insufficient context" do
+      let(:context) { { admin: true } }
+      let(:params) { {} }
+
+      it "returns a failed validation result" do
+        expect(validate)
+          .to be_failure
+          .and have_attributes(
+            operation: composite,
+            component: :contract,
+            params: {},
+            context: { admin: true },
+            after: [],
+            errors: have_attributes(
+              to_h: { name: ["is missing"] }
+            )
+          )
+      end
+    end
+
+    context "when policy failed" do
+      let(:context) { { admin: false, error: nil } }
+
+      it "returns a failed policy result" do
+        expect(validate)
+          .to be_failure
+          .and have_attributes(
+            operation: composite,
+            component: :policies,
+            params: { name: "TEST" },
+            context: { admin: false, error: nil },
+            after: [],
+            errors: have_attributes(
+              to_h: { nil => [
+                text: "Unauthorized",
+                code: :unauthorized
+              ] }
+            )
+          )
+      end
+    end
+
+    context "when preconditions failed" do
+      let(:context) { { admin: true, error: "Error" } }
+
+      it "returns a failed preconditions result" do
+        expect(validate)
+          .to be_failure
+          .and have_attributes(
+            operation: composite,
+            component: :preconditions,
+            params: { name: "TEST" },
+            context: { admin: true, error: "Error" },
+            after: [],
+            errors: have_attributes(
+              to_h: { nil => ["Error"] }
+            )
+          )
+      end
+    end
+  end
+
+  describe "#valid?" do
+    subject(:valid?) { composite.valid?(params, **context) }
+
+    let(:context) { { admin: true, error: nil } }
+    let(:params) { { name: "TEST" } }
+
+    it { is_expected.to eq true }
+
+    context "when check failed" do
+      let(:params) { { name: nil } }
+
+      it { is_expected.to eq false }
+    end
+  end
+
   describe "#callable" do
     subject(:callable) { composite.callable(**context) }
 
