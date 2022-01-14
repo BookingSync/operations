@@ -122,7 +122,7 @@ class Operations::Command
   TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(&block) }
 
   include Dry::Monads[:result]
-  include Dry::Monads::Do.for(:call_monad, :callable_monad)
+  include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad)
   include Dry::Equalizer(*COMPONENTS)
   extend Dry::Initializer
 
@@ -196,6 +196,12 @@ class Operations::Command
     result
   end
 
+  # Checks if the operation is valid to call in the current context and parameters.
+  # Performs policy preconditions and contract checks.
+  def validate(params, **context)
+    operation_result(unwrap_monad(validate_monad(params.to_h, context)))
+  end
+
   # Checks if the operation is possible to call in the current context.
   # Performs both: policy and preconditions checks.
   def callable(params = EMPTY_HASH, **context)
@@ -218,6 +224,12 @@ class Operations::Command
     define_method "#{method}?" do |**kwargs|
       public_send(method, **kwargs).success?
     end
+  end
+
+  # Returns boolean result instead of Operations::Result for validate method.
+  # True on success and false on failure.
+  def valid?(*args, **kwargs)
+    validate(*args, **kwargs).success?
   end
 
   def pretty_print(pp)
@@ -250,10 +262,7 @@ class Operations::Command
 
   def call_monad(params, context)
     result = transaction.call do
-      contract_result = component(:contract).call(params, context)
-
-      yield callable_monad(contract_result)
-      yield contract_result
+      yield contract_result = validate_monad(params, context)
       yield component(:operation).call(contract_result.params, contract_result.context)
     end
 
@@ -267,6 +276,14 @@ class Operations::Command
 
     yield component(:policies).call(contract_result.params, contract_result.context)
     component(:preconditions).call(contract_result.params, contract_result.context)
+  end
+
+  def validate_monad(params, context)
+    contract_result = component(:contract).call(params, context)
+
+    yield callable_monad(contract_result)
+
+    contract_result
   end
 
   def contract_has_all_required_context?(context)

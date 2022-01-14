@@ -9,7 +9,7 @@ require "active_support/core_ext/class/attribute"
 require "active_support/core_ext/module/delegation"
 require "active_support/inflector/inflections"
 require "active_model/naming"
-require "active_model/errors"
+require "active_model/errors" if RUBY_VERSION.to_d < 3.1
 require "operations/version"
 require "operations/types"
 require "operations/contract"
