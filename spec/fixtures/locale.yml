@@ -1,7 +1,7 @@
 en:
   operations:
     errors:
-      not_found: "%{entity_name} does not exist"
+      not_found: "does not exist"
 
       rules:
         unauthorized: "Unauthorized"

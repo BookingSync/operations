@@ -51,7 +51,7 @@ RSpec.describe Operations::Contract do
     context "when id is valid but no entity" do
       let(:params) { { user_id: 42 } }
 
-      it { is_expected.to eq(user_id: [{ code: :not_found, text: "User does not exist" }]) }
+      it { is_expected.to eq(user_id: [{ code: :not_found, text: "does not exist" }]) }
     end
 
     context "when entity is present" do
@@ -84,7 +84,7 @@ RSpec.describe Operations::Contract do
       context "when id is valid but no entity" do
         let(:params) { { user_id: 42 } }
 
-        it { is_expected.to eq(user_id: [{ code: :not_found, text: "User does not exist" }]) }
+        it { is_expected.to eq(user_id: [{ code: :not_found, text: "does not exist" }]) }
       end
 
       context "when entity is present" do
