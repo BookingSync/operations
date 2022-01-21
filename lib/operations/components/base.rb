@@ -37,7 +37,7 @@ class Operations::Components::Base
     messages = Array.wrap(data).map do |datum|
       message_resolver.call(
         message: datum[:message],
-        path: datum[:path] || [nil],
+        path: Array.wrap(datum[:path] || [nil]),
         tokens: datum[:tokens] || {},
         meta: datum[:meta] || {}
       )
