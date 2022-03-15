@@ -11,6 +11,7 @@ require "active_support/inflector/inflections"
 require "active_model/naming"
 require "operations/version"
 require "operations/types"
+require "operations/configuration"
 require "operations/contract"
 require "operations/contract/messages_resolver"
 require "operations/convenience"
@@ -20,9 +21,26 @@ require "operations/form"
 require "operations/form/attribute"
 require "operations/form/builder"
 
-# Dry::Schema.load_extensions(:monads)
-# Dry::Validation.load_extensions(:monads)
+# The root gem module
+module Operations
+  class Error < StandardError
+  end
 
-# Your code goes here...
-class Operations::Error < StandardError
+  DEFAULT_ERROR_REPORTER = lambda do |message, payload|
+    Sentry.capture_message(message, extra: payload)
+  end
+  DEFAULT_TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(&block) }
+
+  class << self
+    attr_reader :default_config
+
+    def configure(**options)
+      @default_config = Configuration.new(**options)
+    end
+  end
+
+  configure(
+    error_reporter: DEFAULT_ERROR_REPORTER,
+    transaction: DEFAULT_TRANSACTION
+  )
 end

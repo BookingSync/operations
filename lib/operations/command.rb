@@ -116,10 +116,6 @@ class Operations::Command
   EMPTY_HASH = {}.freeze
   COMPONENTS = %i[contract policies preconditions operation after].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
-  ERROR_REPORTER = lambda do |message, payload|
-    Sentry.capture_message(message, extra: payload)
-  end
-  TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(&block) }
 
   include Dry::Monads[:result]
   include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad)
@@ -143,8 +139,8 @@ class Operations::Command
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
   option :form_class, Operations::Types::Class, default: proc { build_form }
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
-  option :error_reporter, Operations::Types.Interface(:call), default: proc { ERROR_REPORTER }
-  option :transaction, Operations::Types.Interface(:call), default: proc { TRANSACTION }
+  option :error_reporter, Operations::Types.Interface(:call), default: proc { Operations.default_config.error_reporter }
+  option :transaction, Operations::Types.Interface(:call), default: proc { Operations.default_config.transaction }
 
   # A short-cut to initialize operation by convention:
   #
