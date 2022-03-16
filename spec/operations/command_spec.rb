@@ -453,12 +453,12 @@ RSpec.describe Operations::Command do
     let(:context) { { admin: true, error: nil } }
     let(:params) { { name: "TEST" } }
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
 
     context "when check failed" do
       let(:params) { { name: nil } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
   end
 
@@ -549,10 +549,10 @@ RSpec.describe Operations::Command do
     context "when check failed" do
       let(:context) { { admin: false } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
   end
 
   describe "#allowed" do
@@ -604,10 +604,10 @@ RSpec.describe Operations::Command do
     context "when check failed" do
       let(:context) { { admin: false } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
   end
 
   describe "#possible" do
@@ -656,9 +656,9 @@ RSpec.describe Operations::Command do
     context "when check failed" do
       let(:context) { { error: "Error" } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
   end
 end
