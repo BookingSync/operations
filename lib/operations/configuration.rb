@@ -6,6 +6,7 @@
 class Operations::Configuration
   extend Dry::Initializer
 
-  option :error_reporter, Operations::Types.Interface(:call)
+  option :info_reporter, Operations::Types.Interface(:call), optional: true
+  option :error_reporter, Operations::Types.Interface(:call), optional: true
   option :transaction, Operations::Types.Interface(:call)
 end

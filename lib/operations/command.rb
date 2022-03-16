@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require "operations/components"
-require "operations/components/operation"
 require "operations/components/contract"
 require "operations/components/policies"
 require "operations/components/preconditions"
+require "operations/components/idempotency"
+require "operations/components/operation"
 require "operations/components/after"
 
 # This is an entry point interface for every operation in
@@ -114,7 +115,7 @@ require "operations/components/after"
 class Operations::Command
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
-  COMPONENTS = %i[contract policies preconditions operation after].freeze
+  COMPONENTS = %i[contract policies preconditions idempotency operation after].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
 
   include Dry::Monads[:result]
@@ -129,6 +130,7 @@ class Operations::Command
   option :contract, Operations::Types.Interface(:call)
   option :policies, Operations::Types::Array.of(Operations::Types.Interface(:call))
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :idempotency, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :after, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :form_model_map, Operations::Types::Hash.map(
     Operations::Types::Coercible::Array.of(
@@ -139,7 +141,10 @@ class Operations::Command
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
   option :form_class, Operations::Types::Class, default: proc { build_form }
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
-  option :error_reporter, Operations::Types.Interface(:call), default: proc { Operations.default_config.error_reporter }
+  option :info_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
+    default: proc { Operations.default_config.info_reporter }
+  option :error_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
+    default: proc { Operations.default_config.error_reporter }
   option :transaction, Operations::Types.Interface(:call), default: proc { Operations.default_config.transaction }
 
   # A short-cut to initialize operation by convention:
@@ -250,6 +255,7 @@ class Operations::Command
       "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
         send(identifier),
         message_resolver: contract.message_resolver,
+        info_reporter: info_reporter,
         error_reporter: error_reporter,
         transaction: transaction
       )
@@ -259,7 +265,8 @@ class Operations::Command
   def call_monad(params, context)
     result = transaction.call do
       contract_result = yield validate_monad(params, context)
-      yield component(:operation).call(contract_result.params, contract_result.context)
+      idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
+      yield component(:operation).call(idempotency_result.params, idempotency_result.context)
     end
 
     Success(component(:after).call(result.params, result.context))

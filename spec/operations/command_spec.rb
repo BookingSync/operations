@@ -7,6 +7,7 @@ RSpec.describe Operations::Command do
       contract: contract,
       policies: policies,
       preconditions: preconditions,
+      idempotency: idempotency_checks,
       after: after,
       **composite_options
     )
@@ -24,6 +25,7 @@ RSpec.describe Operations::Command do
   let(:additional_policy) { ->(owner:, **) { owner } }
   let(:policies) { [policy] }
   let(:preconditions) { [->(error:, **) { error }] }
+  let(:idempotency_checks) { [] }
   let(:after) { [->(**) { Dry::Monads::Success(:yay) }] }
   let(:composite_options) { {} }
 
@@ -243,6 +245,26 @@ RSpec.describe Operations::Command do
             errors: have_attributes(
               to_h: { nil => ["Error"] }
             )
+          )
+      end
+    end
+
+    context "when idempotency check failed" do
+      let(:context) { { admin: true, error: nil } }
+      let(:idempotency_checks) { [->(**) { Dry::Monads::Failure(additional: :value) }] }
+      let(:operation) { ->(**) { raise } }
+
+      it "returns a successful result and stops on idempotency check stage" do
+        expect { call }.not_to change { User.count }
+        expect(call)
+          .to be_success
+          .and have_attributes(
+            operation: composite,
+            component: :idempotency,
+            params: { name: "Batman" },
+            context: { admin: true, error: nil, additional: :value },
+            after: [],
+            errors: be_empty
           )
       end
     end
