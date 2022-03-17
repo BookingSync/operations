@@ -53,7 +53,7 @@ class Operations::Components::Idempotency < Operations::Components::Prechecks
       when Success
         next
       else
-        raise "Unrecognizer result of an idempotency check. Expected Result monad, got #{result.class}"
+        raise "Unrecognized result of an idempotency check. Expected Result monad, got #{result.class}"
       end
     end
 
