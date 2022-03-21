@@ -251,7 +251,7 @@ RSpec.describe Operations::Command do
 
     context "when idempotency check failed" do
       let(:context) { { admin: true, error: nil } }
-      let(:idempotency_checks) { [->(**) { Dry::Monads::Failure(additional: :value) }] }
+      let(:idempotency_checks) { [->(_, **) { Dry::Monads::Failure(additional: :value) }] }
       let(:operation) { ->(**) { raise } }
 
       it "returns a successful result and stops on idempotency check stage" do

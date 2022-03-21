@@ -3,7 +3,7 @@
 RSpec.describe Operations::Components::Idempotency do
   subject(:component) { described_class.new(idempotency_checks, info_reporter: info_reporter) }
 
-  let(:idempotency_checks) { [->(**) { Dry::Monads::Success(unused: :value) }] }
+  let(:idempotency_checks) { [->(_, **) { Dry::Monads::Success(unused: :value) }] }
   let(:info_reporter) { instance_double(Proc) }
 
   before { allow(info_reporter).to receive(:call) }
@@ -17,8 +17,8 @@ RSpec.describe Operations::Components::Idempotency do
     context "with idempotency checks failure" do
       let(:idempotency_checks) do
         [
-          ->(**) { Dry::Monads::Success() },
-          ->(**) { Dry::Monads::Failure(additional: :value) }
+          ->(_, **) { Dry::Monads::Success() },
+          ->(_, **) { Dry::Monads::Failure(additional: :value) }
         ]
       end
 

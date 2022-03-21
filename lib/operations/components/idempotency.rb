@@ -17,7 +17,7 @@ require "operations/components/prechecks"
 # Component logs the failed check with `error_reporter`.
 class Operations::Components::Idempotency < Operations::Components::Prechecks
   def call(params, context)
-    failure, failed_check = process_callables(context)
+    failure, failed_check = process_callables(params, context)
 
     if failure
       new_result = result(
@@ -38,12 +38,12 @@ class Operations::Components::Idempotency < Operations::Components::Prechecks
 
   private
 
-  def process_callables(context)
+  def process_callables(params, context)
     failed_check = nil
     failure = nil
 
     callable.each do |entry|
-      result = entry.call(**context)
+      result = entry.call(params, **context)
 
       case result
       when Failure
