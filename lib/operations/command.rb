@@ -93,14 +93,22 @@ require "operations/components/after"
 #    on the context (either initial or the data loaded by the contract).
 #    Anything that has nothing to do with the user input validation
 #    should be implemented as a precondition.
-# 4. Operation itself implements the routine. It can create or update
+# 4. Idempotency check are running after preconditions and can return
+#    either Success() or Failure({}). In case of Failure, the operation
+#    body (and after calls) will be skept but the operatiuon result will
+#    be successful. Failure({}) can carry an additional context to make
+#    sure the opreation result context is going to be the same for case
+#    or normal operation execution and skipped operation body. The only
+#    sign of the execution interrupted atthis stage will be the value
+#    of {Result#component} equal to `:idempotency`.
+# 5. Operation itself implements the routine. It can create or update
 #    enities, send API requiests, send notifications, communicate with
 #    the bus. Anything that should be done as a part of the operation.
 #    Operation returns a Result monad (either Success or Failure).
 #    See {https://dry-rb.org/gems/dry-monads/1.3/} for details. Also,
 #    it is better to use Do notation for the implementation. If Success
 #    result contains a hash, it is returned as a part of the context.
-# 5. After calls run after the operation was successful and transaction
+# 6. After calls run after the operation was successful and transaction
 #    was committed. Composite adds the result of the after calls to the
 #    operation result but in case of unsuccessful after calls, the
 #    operation is still marked as successful. Each particular after

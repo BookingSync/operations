@@ -22,7 +22,7 @@ class Operations::Components::Idempotency < Operations::Components::Prechecks
     if failure
       new_result = result(
         params: params,
-        context: context.merge(failure.failure || {})
+        context: context.merge(failure.failure)
       )
 
       report_failure(new_result, failed_check)
