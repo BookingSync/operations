@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Operations::Configuration do
-  subject(:configuration) { Operations::Configuration.new(options) }
+  subject(:configuration) { Operations::Configuration.new(**options) }
 
   let(:error_reporter) { ->() {} }
   let(:transaction) { ->() {} }
