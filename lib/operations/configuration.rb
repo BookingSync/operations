@@ -9,4 +9,8 @@ class Operations::Configuration
   option :info_reporter, Operations::Types.Interface(:call), optional: true
   option :error_reporter, Operations::Types.Interface(:call), optional: true
   option :transaction, Operations::Types.Interface(:call)
+
+  def to_h
+    self.class.dry_initializer.attributes(self)
+  end
 end
