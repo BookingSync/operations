@@ -95,12 +95,12 @@ require "operations/components/after"
 #    should be implemented as a precondition.
 # 4. Idempotency check are running after preconditions and can return
 #    either Success() or Failure({}). In case of Failure, the operation
-#    body (and after calls) will be skept but the operatiuon result will
+#    body (and after calls) will be skept but the operation result will
 #    be successful. Failure({}) can carry an additional context to make
-#    sure the opreation result context is going to be the same for case
-#    or normal operation execution and skipped operation body. The only
-#    sign of the execution interrupted atthis stage will be the value
-#    of {Result#component} equal to `:idempotency`.
+#    sure the operation result context is going to be the same for both
+#    cases of normal operation execution and skipped operation body. The
+#    only sign of the execution interrupted at this stage will be the
+#    value of {Result#component} equal to `:idempotency`.
 # 5. Operation itself implements the routine. It can create or update
 #    enities, send API requiests, send notifications, communicate with
 #    the bus. Anything that should be done as a part of the operation.
