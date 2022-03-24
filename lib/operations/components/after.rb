@@ -44,7 +44,7 @@ class Operations::Components::After < Operations::Components::Base
 
   def maybe_report_failure(result)
     if result.after.any?(Failure)
-      error_reporter.call(
+      error_reporter&.call(
         "Operation side-effects went sideways",
         result: result.pretty_inspect
       )

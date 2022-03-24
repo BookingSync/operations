@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require "operations/components"
-require "operations/components/operation"
 require "operations/components/contract"
 require "operations/components/policies"
 require "operations/components/preconditions"
+require "operations/components/idempotency"
+require "operations/components/operation"
 require "operations/components/after"
 
 # This is an entry point interface for every operation in
@@ -92,14 +93,22 @@ require "operations/components/after"
 #    on the context (either initial or the data loaded by the contract).
 #    Anything that has nothing to do with the user input validation
 #    should be implemented as a precondition.
-# 4. Operation itself implements the routine. It can create or update
+# 4. Idempotency check are running after preconditions and can return
+#    either Success() or Failure({}). In case of Failure, the operation
+#    body (and after calls) will be skept but the operation result will
+#    be successful. Failure({}) can carry an additional context to make
+#    sure the operation result context is going to be the same for both
+#    cases of normal operation execution and skipped operation body. The
+#    only sign of the execution interrupted at this stage will be the
+#    value of {Result#component} equal to `:idempotency`.
+# 5. Operation itself implements the routine. It can create or update
 #    enities, send API requiests, send notifications, communicate with
 #    the bus. Anything that should be done as a part of the operation.
 #    Operation returns a Result monad (either Success or Failure).
 #    See {https://dry-rb.org/gems/dry-monads/1.3/} for details. Also,
 #    it is better to use Do notation for the implementation. If Success
 #    result contains a hash, it is returned as a part of the context.
-# 5. After calls run after the operation was successful and transaction
+# 6. After calls run after the operation was successful and transaction
 #    was committed. Composite adds the result of the after calls to the
 #    operation result but in case of unsuccessful after calls, the
 #    operation is still marked as successful. Each particular after
@@ -114,12 +123,8 @@ require "operations/components/after"
 class Operations::Command
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
-  COMPONENTS = %i[contract policies preconditions operation after].freeze
+  COMPONENTS = %i[contract policies preconditions idempotency operation after].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
-  ERROR_REPORTER = lambda do |message, payload|
-    Sentry.capture_message(message, extra: payload)
-  end
-  TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(&block) }
 
   include Dry::Monads[:result]
   include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad)
@@ -133,6 +138,7 @@ class Operations::Command
   option :contract, Operations::Types.Interface(:call)
   option :policies, Operations::Types::Array.of(Operations::Types.Interface(:call))
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :idempotency, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :after, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :form_model_map, Operations::Types::Hash.map(
     Operations::Types::Coercible::Array.of(
@@ -143,8 +149,11 @@ class Operations::Command
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
   option :form_class, Operations::Types::Class, default: proc { build_form }
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
-  option :error_reporter, Operations::Types.Interface(:call), default: proc { ERROR_REPORTER }
-  option :transaction, Operations::Types.Interface(:call), default: proc { TRANSACTION }
+  option :info_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
+    default: proc { Operations.default_config.info_reporter }
+  option :error_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
+    default: proc { Operations.default_config.error_reporter }
+  option :transaction, Operations::Types.Interface(:call), default: proc { Operations.default_config.transaction }
 
   # A short-cut to initialize operation by convention:
   #
@@ -254,6 +263,7 @@ class Operations::Command
       "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
         send(identifier),
         message_resolver: contract.message_resolver,
+        info_reporter: info_reporter,
         error_reporter: error_reporter,
         transaction: transaction
       )
@@ -263,7 +273,8 @@ class Operations::Command
   def call_monad(params, context)
     result = transaction.call do
       contract_result = yield validate_monad(params, context)
-      yield component(:operation).call(contract_result.params, contract_result.context)
+      idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
+      yield component(:operation).call(idempotency_result.params, idempotency_result.context)
     end
 
     Success(component(:after).call(result.params, result.context))

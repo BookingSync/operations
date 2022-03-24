@@ -7,6 +7,7 @@ RSpec.describe Operations::Command do
       contract: contract,
       policies: policies,
       preconditions: preconditions,
+      idempotency: idempotency_checks,
       after: after,
       **composite_options
     )
@@ -24,6 +25,7 @@ RSpec.describe Operations::Command do
   let(:additional_policy) { ->(owner:, **) { owner } }
   let(:policies) { [policy] }
   let(:preconditions) { [->(error:, **) { error }] }
+  let(:idempotency_checks) { [] }
   let(:after) { [->(**) { Dry::Monads::Success(:yay) }] }
   let(:composite_options) { {} }
 
@@ -247,6 +249,26 @@ RSpec.describe Operations::Command do
       end
     end
 
+    context "when idempotency check failed" do
+      let(:context) { { admin: true, error: nil } }
+      let(:idempotency_checks) { [->(_, **) { Dry::Monads::Failure(additional: :value) }] }
+      let(:operation) { ->(**) { raise } }
+
+      it "returns a successful result and stops on idempotency check stage" do
+        expect { call }.not_to change { User.count }
+        expect(call)
+          .to be_success
+          .and have_attributes(
+            operation: composite,
+            component: :idempotency,
+            params: { name: "Batman" },
+            context: { admin: true, error: nil, additional: :value },
+            after: [],
+            errors: be_empty
+          )
+      end
+    end
+
     context "with insufficient context" do
       let(:params) { {} }
       let(:context) { { admin: true } }
@@ -431,12 +453,12 @@ RSpec.describe Operations::Command do
     let(:context) { { admin: true, error: nil } }
     let(:params) { { name: "TEST" } }
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
 
     context "when check failed" do
       let(:params) { { name: nil } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
   end
 
@@ -527,10 +549,10 @@ RSpec.describe Operations::Command do
     context "when check failed" do
       let(:context) { { admin: false } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
   end
 
   describe "#allowed" do
@@ -582,10 +604,10 @@ RSpec.describe Operations::Command do
     context "when check failed" do
       let(:context) { { admin: false } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
   end
 
   describe "#possible" do
@@ -634,9 +656,9 @@ RSpec.describe Operations::Command do
     context "when check failed" do
       let(:context) { { error: "Error" } }
 
-      it { is_expected.to eq false }
+      it { is_expected.to be false }
     end
 
-    it { is_expected.to eq true }
+    it { is_expected.to be true }
   end
 end
