@@ -205,6 +205,17 @@ class Operations::Command
     result
   end
 
+  # Calls the operation and raises an exception in case of a failure
+  # but only if preconditions and policies have passed.
+  # This means that the exception will be raise only on contract
+  # or the operation body failure.
+  def try_call!(params, **context)
+    result = call(params, **context)
+    raise OperationFailed.new(result.pretty_inspect) if result.failure? && !result.failed_precheck?
+
+    result
+  end
+
   # Checks if the operation is valid to call in the current context and parameters.
   # Performs policy preconditions and contract checks.
   def validate(params, **context)
