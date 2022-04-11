@@ -207,7 +207,7 @@ class Operations::Command
 
   # Calls the operation and raises an exception in case of a failure
   # but only if preconditions and policies have passed.
-  # This means that the exception will be raise only on contract
+  # This means that the exception will be raised only on contract
   # or the operation body failure.
   def try_call!(params, **context)
     result = call(params, **context)
