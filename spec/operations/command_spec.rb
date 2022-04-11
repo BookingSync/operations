@@ -347,6 +347,45 @@ RSpec.describe Operations::Command do
     it { is_expected.to be_success }
   end
 
+  describe "#try_call!" do
+    subject(:try_call!) { composite.try_call!(params, **context) }
+
+    let(:params) { { name: "Batman" } }
+    let(:context) { { admin: true, error: nil } }
+
+    context "when contract failed" do
+      let(:params) { {} }
+
+      specify do
+        expect { try_call! }
+          .to raise_error Operations::Command::OperationFailed, %r{text="is missing" path=\[:name\]}
+      end
+    end
+
+    context "when policy failed" do
+      let(:context) { { admin: false, error: nil } }
+
+      it { is_expected.to be_failure & have_attributes(component: :policies) }
+    end
+
+    context "when precondition failed" do
+      let(:context) { { admin: true, error: "Error" } }
+
+      it { is_expected.to be_failure & have_attributes(component: :preconditions) }
+    end
+
+    context "when operation failed" do
+      let(:operation) { ->(**) { Dry::Monads::Failure("Runtime error") } }
+
+      specify do
+        expect { try_call! }
+          .to raise_error Operations::Command::OperationFailed, %r{text="Runtime error" path=\[nil\]}
+      end
+    end
+
+    it { is_expected.to be_success }
+  end
+
   describe "#validate" do
     subject(:validate) { composite.validate(params, **context) }
 
