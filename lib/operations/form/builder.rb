@@ -47,29 +47,26 @@ class Operations::Form::Builder
     nested_attributes_collection = hash_key.members.all?(Dry::Schema::Key::Hash) &&
       hash_key.members.map(&:members).uniq.size == 1
 
-    if nested_attributes_suffix && !nested_attributes_collection
-      name = hash_key.name.gsub(NESTED_ATTRIBUTES_SUFFIX, "")
-      members = hash_key.members
-      collection = false
-    elsif nested_attributes_suffix && nested_attributes_collection
-      name = hash_key.name.gsub(NESTED_ATTRIBUTES_SUFFIX, "")
-      members = hash_key.members.first.members
-      collection = true
-    else
-      name = hash_key.name
-      members = hash_key.members
-      collection = false
-    end
-
-    if nested_attributes_suffix
-      form.define_method "#{hash_key.name}=" do |attributes|
-        attributes
-      end
-    end
+    name, members, collection = specify_form_attributes(
+      hash_key,
+      nested_attributes_suffix,
+      nested_attributes_collection
+    )
+    form.define_method "#{hash_key.name}=", proc { |attributes| attributes } if nested_attributes_suffix
 
     key_path = path + [name]
     nested_form = traverse(members, form, name.underscore.camelize, model_map, key_path)
     form.attribute(name, form: nested_form, collection: collection, **model_name(key_path, model_map))
+  end
+
+  def specify_form_attributes(hash_key, nested_attributes_suffix, nested_attributes_collection)
+    if nested_attributes_suffix && !nested_attributes_collection
+      [hash_key.name.gsub(NESTED_ATTRIBUTES_SUFFIX, ""), hash_key.members, false]
+    elsif nested_attributes_suffix && nested_attributes_collection
+      [hash_key.name.gsub(NESTED_ATTRIBUTES_SUFFIX, ""), hash_key.members.first.members, true]
+    else
+      [hash_key.name, hash_key.members, false]
+    end
   end
 
   def model_name(path, model_map)

@@ -91,10 +91,29 @@ class Operations::Result
     end
   end
 
+  def as_json
+    {
+      component: component,
+      command: operation.as_json,
+      params: params,
+      context: context_as_json,
+      after: after.map { |component| component.class.name },
+      errors: errors(full: true).to_h
+    }
+  end
+
   private
 
   def errors_with_code?(name, *names)
     names = [name] + names
     (errors.map { |error| error.meta[:code] } & names).present?
+  end
+
+  def context_as_json
+    context.transform_values do |context_value|
+      next context_value.class.name unless context_value.respond_to?(:id)
+
+      [context_value.class.name, context_value.id].join("#")
+    end
   end
 end

@@ -339,8 +339,10 @@ RSpec.describe Operations::Command do
       let(:params) { {} }
 
       specify do
-        expect { call! }
-          .to raise_error Operations::Command::OperationFailed, %r{text="is missing" path=\[:name\]}
+        expect { call! }.to raise_error do |error|
+          expect(error).to be_a(Operations::Command::OperationFailed)
+          expect(error.message).to include(":name=>[\"name is missing\"]")
+        end
       end
     end
 
@@ -357,8 +359,10 @@ RSpec.describe Operations::Command do
       let(:params) { {} }
 
       specify do
-        expect { try_call! }
-          .to raise_error Operations::Command::OperationFailed, %r{text="is missing" path=\[:name\]}
+        expect { try_call! }.to raise_error do |error|
+          expect(error).to be_a(Operations::Command::OperationFailed)
+          expect(error.message).to include(":name=>[\"name is missing\"]")
+        end
       end
     end
 
@@ -378,8 +382,10 @@ RSpec.describe Operations::Command do
       let(:operation) { ->(**) { Dry::Monads::Failure("Runtime error") } }
 
       specify do
-        expect { try_call! }
-          .to raise_error Operations::Command::OperationFailed, %r{text="Runtime error" path=\[nil\]}
+        expect { try_call! }.to raise_error do |error|
+          expect(error).to be_a(Operations::Command::OperationFailed)
+          expect(error.message).to include("Runtime error")
+        end
       end
     end
 
@@ -699,5 +705,86 @@ RSpec.describe Operations::Command do
     end
 
     it { is_expected.to be true }
+  end
+
+  describe "#as_json" do
+    subject(:as_json) { command.as_json }
+
+    let(:command) { DummyOperation.instance }
+    let(:command_implementation) do
+      Class.new do
+        def self.instance
+          Operations::Command.new(
+            new,
+            contract: DummyOperation::Contract.new,
+            policy: DummyOperation::Policy.new,
+            precondition: DummyOperation::Precondition.new,
+            idempotency: [DummyOperation::IdempotencyCheck.new],
+            after: [DummyOperation::After.new],
+            form_base: DummyOperation::FormBase,
+            form_class: DummyOperation::FormClass,
+            form_model_map: { attribute: "attribute_map" },
+            form_hydrator: DummyOperation::FormHydrator.new,
+            info_reporter: DummyOperation::InfoReporter.new,
+            error_reporter: DummyOperation::ErrorReporter.new,
+            transaction: DummyOperation::Transaction.new
+          )
+        end
+
+        def call; end
+
+        const_set(:Contract, Class.new(Dry::Validation::Contract) do
+          schema { nil }
+        end)
+        const_set(:Policy, Class.new do
+          def call; end
+        end)
+        const_set(:Precondition, Class.new do
+          def call; end
+        end)
+        const_set(:After, Class.new do
+          def call; end
+        end)
+        const_set(:IdempotencyCheck, Class.new do
+          def call; end
+        end)
+        const_set(:FormBase, Class.new)
+        const_set(:FormClass, Class.new)
+        const_set(:FormHydrator, Class.new do
+          def call; end
+        end)
+        const_set(:InfoReporter, Class.new do
+          def call; end
+        end)
+        const_set(:ErrorReporter, Class.new do
+          def call; end
+        end)
+        const_set(:Transaction, Class.new do
+          def call; end
+        end)
+      end
+    end
+
+    before do
+      stub_const("DummyOperation", command_implementation)
+    end
+
+    specify do
+      expect(as_json).to eq(
+        operation: "DummyOperation",
+        contract: "DummyOperation::Contract",
+        policies: ["DummyOperation::Policy"],
+        preconditions: ["DummyOperation::Precondition"],
+        idempotency: ["DummyOperation::IdempotencyCheck"],
+        after: ["DummyOperation::After"],
+        form_base: "DummyOperation::FormBase",
+        form_class: "DummyOperation::FormClass",
+        form_hydrator: "DummyOperation::FormHydrator",
+        form_model_map: { [:attribute] => "attribute_map" },
+        info_reporter: "DummyOperation::InfoReporter",
+        error_reporter: "DummyOperation::ErrorReporter",
+        transaction: "DummyOperation::Transaction"
+      )
+    end
   end
 end

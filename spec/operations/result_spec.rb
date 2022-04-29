@@ -202,4 +202,55 @@ RSpec.describe Operations::Result do
         )
     end
   end
+
+  describe "#as_json" do
+    subject(:as_json) { result.as_json }
+
+    let(:traceable_object) { Struct.new(:id, :name) }
+    let(:anonymous_object) { Struct.new(:name) }
+    let(:params) { { id: 123, name: "Jon", lastname: "Snow" } }
+    let(:context) { { record: TraceableObject.new(1, "Some name"), object: AnonymousObject.new("Some name") } }
+    let(:message) do
+      Dry::Validation::Message::Localized.new(
+        ->(**) { ["Error message", {}] },
+        path: "column"
+      )
+    end
+    let(:errors) { Dry::Validation::MessageSet.new([message]).freeze }
+    let(:command_json) do
+      {
+        operation: "DummyOperation",
+        contract: "DummyOperation::Contract",
+        policies: ["DummyOperation::Policy"],
+        preconditions: ["DummyOperation::Precondition"],
+        idempotency: ["DummyOperation::IdempotencyCheck"],
+        after: ["DummyOperation::After"],
+        form_model_map: { [:attribute] => "attribute_map" },
+        form_base: "Operations::Form",
+        form_class: "DummyOperation::Form",
+        form_hydrator: "Hydrator",
+        info_reporter: "InfoReporter",
+        error_reporter: "ErrorReporter",
+        transaction: "TransactionClass"
+      }
+    end
+
+    before do
+      stub_const("TraceableObject", traceable_object)
+      stub_const("AnonymousObject", anonymous_object)
+
+      allow(operation).to receive(:as_json).and_return(command_json)
+    end
+
+    specify do
+      expect(as_json).to include(
+        component: :contract,
+        command: command_json,
+        params: { id: 123, name: "Jon", lastname: "Snow" },
+        context: { record: "TraceableObject#1", object: "AnonymousObject" },
+        after: [],
+        errors: { "column" => ["Error message"] }
+      )
+    end
+  end
 end
