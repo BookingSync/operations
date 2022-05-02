@@ -133,17 +133,17 @@ class Operations::Command
 
   # Provides message and meaningful sentry context for failed operations
   class OperationFailed < StandardError
-    attr_reader :data
+    attr_reader :operation_result
 
-    def initialize(data)
-      @data = data
-      operation_class_name = data.operation&.operation&.class&.name
+    def initialize(operation_result)
+      @operation_result = operation_result
+      operation_class_name = operation_result.operation&.operation&.class&.name
 
-      super("#{operation_class_name} failed on #{data.component}")
+      super("#{operation_class_name} failed on #{operation_result.component}")
     end
 
     def sentry_context
-      data.as_json
+      operation_result.as_json
     end
   end
 
