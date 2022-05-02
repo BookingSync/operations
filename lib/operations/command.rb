@@ -131,7 +131,20 @@ class Operations::Command
   include Dry::Equalizer(*COMPONENTS)
   extend Dry::Initializer
 
+  # Provides message and meaningful sentry context for failed operations
   class OperationFailed < StandardError
+    attr_reader :data
+
+    def initialize(data)
+      @data = data
+      operation_class_name = data.operation&.operation&.class&.name
+
+      super("#{operation_class_name} failed on #{data.component}")
+    end
+
+    def sentry_context
+      data.as_json
+    end
   end
 
   param :operation, Operations::Types.Interface(:call)
@@ -200,7 +213,7 @@ class Operations::Command
   # Works the same way as `call` but raises an exception on operation failure.
   def call!(params, **context)
     result = call(params, **context)
-    raise OperationFailed.new(result.as_json) if result.failure?
+    raise OperationFailed.new(result) if result.failure?
 
     result
   end
@@ -211,7 +224,7 @@ class Operations::Command
   # or the operation body failure.
   def try_call!(params, **context)
     result = call(params, **context)
-    raise OperationFailed.new(result.as_json) if result.failure? && !result.failed_precheck?
+    raise OperationFailed.new(result) if result.failure? && !result.failed_precheck?
 
     result
   end
