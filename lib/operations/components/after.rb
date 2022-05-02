@@ -46,7 +46,7 @@ class Operations::Components::After < Operations::Components::Base
     if result.after.any?(Failure)
       error_reporter&.call(
         "Operation side-effects went sideways",
-        result: result.pretty_inspect
+        result: result.as_json
       )
     end
 
