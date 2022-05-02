@@ -200,7 +200,7 @@ class Operations::Command
   # Works the same way as `call` but raises an exception on operation failure.
   def call!(params, **context)
     result = call(params, **context)
-    raise OperationFailed.new(result.pretty_inspect) if result.failure?
+    raise OperationFailed.new(result.as_json) if result.failure?
 
     result
   end
@@ -211,7 +211,7 @@ class Operations::Command
   # or the operation body failure.
   def try_call!(params, **context)
     result = call(params, **context)
-    raise OperationFailed.new(result.pretty_inspect) if result.failure? && !result.failed_precheck?
+    raise OperationFailed.new(result.as_json) if result.failure? && !result.failed_precheck?
 
     result
   end
@@ -267,7 +267,37 @@ class Operations::Command
     end
   end
 
+  def as_json
+    {
+      **main_components_as_json,
+      **form_components_as_json,
+      info_reporter: info_reporter.class.name,
+      error_reporter: error_reporter.class.name,
+      transaction: transaction.class.name
+    }
+  end
+
   private
+
+  def main_components_as_json
+    {
+      operation: operation.class.name,
+      contract: contract.class.name,
+      policies: policies.map { |policy| policy.class.name },
+      preconditions: preconditions.map { |precondition| precondition.class.name },
+      idempotency: idempotency.map { |idempotency_check| idempotency_check.class.name },
+      after: after.map { |after_component| after_component.class.name }
+    }
+  end
+
+  def form_components_as_json
+    {
+      form_model_map: form_model_map,
+      form_base: form_base.name,
+      form_class: form_class.name,
+      form_hydrator: form_hydrator.class.name
+    }
+  end
 
   def component(identifier)
     (@components ||= {})[identifier] = begin
