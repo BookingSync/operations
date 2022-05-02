@@ -51,7 +51,7 @@ RSpec.describe Operations::Components::After do
       expect(transaction).to have_received(:call).exactly(3).times
       expect(error_reporter).to have_received(:call).with(
         "Operation side-effects went sideways",
-        result: call.pretty_inspect
+        result: call.as_json
       ).once
     end
   end

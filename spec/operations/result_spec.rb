@@ -7,6 +7,7 @@ RSpec.describe Operations::Result do
       component: component,
       params: params,
       context: context,
+      after: after,
       **{ errors: errors }.compact
     )
   end
@@ -16,6 +17,7 @@ RSpec.describe Operations::Result do
   let(:params) { {} }
   let(:context) { {} }
   let(:errors) { nil }
+  let(:after) { [] }
   let(:message) { instance_double(Dry::Validation::Message) }
 
   before do
@@ -216,6 +218,7 @@ RSpec.describe Operations::Result do
         path: "column"
       )
     end
+    let(:after) { [Dry::Monads::Success(Entity: "Model#1"), Dry::Monads::Failure(additional: :value)] }
     let(:errors) { Dry::Validation::MessageSet.new([message]).freeze }
     let(:command_json) do
       {
@@ -248,7 +251,10 @@ RSpec.describe Operations::Result do
         command: command_json,
         params: { id: 123, name: "Jon", lastname: "Snow" },
         context: { record: "TraceableObject#1", object: "AnonymousObject" },
-        after: [],
+        after: match([
+          { "value" => { "Entity" => "Model#1" } },
+          include("trace", "value" => { "additional" => "value" })
+        ]),
         errors: { "column" => ["Error message"] }
       )
     end

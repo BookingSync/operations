@@ -97,7 +97,7 @@ class Operations::Result
       command: operation.as_json,
       params: params,
       context: context_as_json,
-      after: after.map { |component| component.class.name },
+      after: after.as_json,
       errors: errors(full: true).to_h
     }
   end
