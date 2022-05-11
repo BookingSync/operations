@@ -77,8 +77,9 @@ module Operations::Convenience
   end
 
   def contract(prefix = nil, from: OperationContract, &block)
-    contract = Class.new(from, &block)
+    contract = Class.new(from)
     contract.config.messages.namespace = name.underscore
+    contract.class_eval(&block)
     const_set("#{prefix.to_s.camelize}Contract", contract)
   end
 
