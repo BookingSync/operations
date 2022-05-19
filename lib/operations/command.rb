@@ -326,7 +326,7 @@ class Operations::Command
 
   def call_monad(params, context)
     result = transaction.call do
-      contract_result = yield validate_monad(params, context)
+      contract_result = yield validate_monad(params, context, call_idempotency: true)
 
       yield component(:operation).call(contract_result.params, contract_result.context)
     end
@@ -334,22 +334,25 @@ class Operations::Command
     Success(component(:after).call(result.params, result.context))
   end
 
-  def callable_monad(contract_result)
+  def callable_monad(contract_result, call_idempotency: false)
     # We need to check policies/preconditions at the beginning.
     # But since contract loads entities, we need to run it first.
     yield contract_result if contract_result.failure? && !contract_has_all_required_context?(contract_result.context)
 
     yield component(:policies).call(contract_result.params, contract_result.context)
-    idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
-    yield component(:preconditions).call(idempotency_result.params, idempotency_result.context)
 
-    idempotency_result
+    if call_idempotency
+      idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
+    end
+    preconditions_result = yield component(:preconditions).call(contract_result.params, contract_result.context)
+
+    idempotency_result || preconditions_result
   end
 
-  def validate_monad(params, context)
+  def validate_monad(params, context, call_idempotency: false)
     contract_result = component(:contract).call(params, context)
 
-    yield callable_monad(contract_result)
+    yield callable_monad(contract_result, call_idempotency: call_idempotency)
 
     contract_result
   end

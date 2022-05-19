@@ -580,7 +580,7 @@ RSpec.describe Operations::Command do
         .to be_success
         .and have_attributes(
           operation: composite,
-          component: :idempotency,
+          component: :preconditions,
           params: {},
           context: { admin: true, error: nil },
           after: [],
