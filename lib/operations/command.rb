@@ -327,8 +327,8 @@ class Operations::Command
   def call_monad(params, context)
     result = transaction.call do
       contract_result = yield validate_monad(params, context)
-      idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
-      yield component(:operation).call(idempotency_result.params, idempotency_result.context)
+
+      yield component(:operation).call(contract_result.params, contract_result.context)
     end
 
     Success(component(:after).call(result.params, result.context))
@@ -340,7 +340,10 @@ class Operations::Command
     yield contract_result if contract_result.failure? && !contract_has_all_required_context?(contract_result.context)
 
     yield component(:policies).call(contract_result.params, contract_result.context)
-    component(:preconditions).call(contract_result.params, contract_result.context)
+    idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
+    yield component(:preconditions).call(idempotency_result.params, idempotency_result.context)
+
+    idempotency_result
   end
 
   def validate_monad(params, context)
