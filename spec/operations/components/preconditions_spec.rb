@@ -51,7 +51,7 @@ RSpec.describe Operations::Components::Preconditions do
             component: :preconditions,
             params: { name: "Batman" },
             context: { subject: 42 },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [
                 { text: "Failure 1", code: :failure1 },
@@ -91,7 +91,7 @@ RSpec.describe Operations::Components::Preconditions do
             component: :preconditions,
             params: { name: "Batman" },
             context: { subject: 42 },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [
                 { text: "Failure 1", code: :failure1 }
@@ -111,7 +111,7 @@ RSpec.describe Operations::Components::Preconditions do
             component: :preconditions,
             params: { name: "Batman" },
             context: { subject: 42 },
-            after: [],
+            on_success: [],
             errors: be_empty
           )
       end
@@ -124,7 +124,7 @@ RSpec.describe Operations::Components::Preconditions do
           component: :preconditions,
           params: { name: "Batman" },
           context: { subject: 42 },
-          after: [],
+          on_success: [],
           errors: be_empty
         )
     end

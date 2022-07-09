@@ -49,7 +49,7 @@ RSpec.describe Operations::Components::Policies do
             component: :policies,
             params: { name: "Batman" },
             context: { admin: false },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized!",
@@ -77,7 +77,7 @@ RSpec.describe Operations::Components::Policies do
             component: :policies,
             params: { name: "Batman" },
             context: { admin: Dry::Monads::Failure(:failure1) },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Failure 1",
@@ -106,7 +106,7 @@ RSpec.describe Operations::Components::Policies do
             component: :policies,
             params: { name: "Batman" },
             context: { admin: Dry::Monads::Success(), owner: false },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized!",
@@ -128,7 +128,7 @@ RSpec.describe Operations::Components::Policies do
             component: :policies,
             params: { name: "Batman" },
             context: { admin: Dry::Monads::Failure(:failure1), owner: false },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Failure 1",
@@ -150,7 +150,7 @@ RSpec.describe Operations::Components::Policies do
             component: :policies,
             params: { name: "Batman" },
             context: { admin: false },
-            after: [],
+            on_success: [],
             errors: be_empty
           )
       end
@@ -163,7 +163,7 @@ RSpec.describe Operations::Components::Policies do
           component: :policies,
           params: { name: "Batman" },
           context: { admin: true },
-          after: [],
+          on_success: [],
           errors: be_empty
         )
     end

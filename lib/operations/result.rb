@@ -7,14 +7,14 @@
 # Also able to spawn a form object basing on the operation params and errors.
 class Operations::Result
   include Dry::Monads[:result]
-  include Dry::Equalizer(:operation, :component, :params, :context, :after, :errors)
+  include Dry::Equalizer(:operation, :component, :params, :context, :on_success, :errors)
   extend Dry::Initializer
 
   option :operation, type: Operations::Types::Instance(Operations::Command), optional: true
   option :component, type: Operations::Types::Symbol.enum(*Operations::Command::COMPONENTS)
   option :params, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
   option :context, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
-  option :after, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }
+  option :on_success, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }
   option :errors, type: Operations::Types.Interface(:call) | Operations::Types::Instance(Dry::Validation::MessageSet),
     default: proc { Dry::Validation::MessageSet.new([]).freeze }
 
@@ -97,7 +97,7 @@ class Operations::Result
       command: operation.as_json,
       params: params,
       context: context_as_json,
-      after: after.as_json,
+      on_success: on_success.as_json,
       errors: errors(full: true).to_h
     }
   end

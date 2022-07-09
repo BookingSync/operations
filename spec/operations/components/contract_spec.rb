@@ -34,7 +34,7 @@ RSpec.describe Operations::Components::Contract do
             component: :contract,
             params: {},
             context: { admin: true, object: :foo },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { name: ["is missing"] }
             )
@@ -57,7 +57,7 @@ RSpec.describe Operations::Components::Contract do
             component: :contract,
             params: { name: "Batman" },
             context: { admin: true, forced_rule_error: true, object: :foo },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => ["forcefully failed"] }
             )
@@ -72,7 +72,7 @@ RSpec.describe Operations::Components::Contract do
           component: :contract,
           params: { name: "Batman" },
           context: { admin: true, object: :foo },
-          after: [],
+          on_success: [],
           errors: be_empty
         )
     end
