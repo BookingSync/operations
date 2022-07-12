@@ -7,7 +7,7 @@ RSpec.describe Operations::Result do
       component: component,
       params: params,
       context: context,
-      after: after,
+      on_success: on_success,
       **{ errors: errors }.compact
     )
   end
@@ -17,7 +17,7 @@ RSpec.describe Operations::Result do
   let(:params) { {} }
   let(:context) { {} }
   let(:errors) { nil }
-  let(:after) { [] }
+  let(:on_success) { [] }
   let(:message) { instance_double(Dry::Validation::Message) }
 
   before do
@@ -55,7 +55,7 @@ RSpec.describe Operations::Result do
         component: component,
         params: { foo: 42 },
         context: context,
-        after: []
+        on_success: []
       )
     end
   end
@@ -218,7 +218,7 @@ RSpec.describe Operations::Result do
         path: "column"
       )
     end
-    let(:after) { [Dry::Monads::Success(Entity: "Model#1"), Dry::Monads::Failure(additional: :value)] }
+    let(:on_success) { [Dry::Monads::Success(Entity: "Model#1"), Dry::Monads::Failure(additional: :value)] }
     let(:errors) { Dry::Validation::MessageSet.new([message]).freeze }
     let(:command_json) do
       {
@@ -227,7 +227,7 @@ RSpec.describe Operations::Result do
         policies: ["DummyOperation::Policy"],
         preconditions: ["DummyOperation::Precondition"],
         idempotency: ["DummyOperation::IdempotencyCheck"],
-        after: ["DummyOperation::After"],
+        on_success: ["DummyOperation::OnSuccess"],
         form_model_map: { [:attribute] => "attribute_map" },
         form_base: "Operations::Form",
         form_class: "DummyOperation::Form",
@@ -251,7 +251,7 @@ RSpec.describe Operations::Result do
         command: command_json,
         params: { id: 123, name: "Jon", lastname: "Snow" },
         context: { record: "TraceableObject#1", object: "AnonymousObject" },
-        after: match([
+        on_success: match([
           { "value" => { "Entity" => "Model#1" } },
           include("trace", "value" => { "additional" => "value" })
         ]),

@@ -36,7 +36,7 @@ RSpec.describe Operations::Components::Operation do
             component: :operation,
             params: { name: "Batman" },
             context: { subject: 42, entity: "Entity" },
-            after: [],
+            on_success: [],
             errors: have_attributes(
               to_h: { nil => [{ text: "Failure", code: :failure }] }
             )
@@ -67,7 +67,7 @@ RSpec.describe Operations::Components::Operation do
           component: :operation,
           params: { name: "Batman" },
           context: { subject: 42, entity: "Entity", passed: ["Entity", { name: "Batman" }] },
-          after: [],
+          on_success: [],
           errors: be_empty
         )
     end

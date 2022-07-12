@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-RSpec.describe Operations::Components::After do
-  subject(:component) { described_class.new(after, transaction: transaction, error_reporter: error_reporter) }
+RSpec.describe Operations::Components::OnSuccess do
+  subject(:component) { described_class.new(on_success, transaction: transaction, error_reporter: error_reporter) }
 
-  let(:after) do
+  let(:on_success) do
     [
       ->(params, entity:, **) { Dry::Monads::Success([entity, params]) },
       ->(**) { raise "it hits the fan" },
@@ -24,8 +24,8 @@ RSpec.describe Operations::Components::After do
     let(:params) { { name: "Batman" } }
     let(:context) { { subject: 42, entity: "Entity" } }
 
-    context "when no after failures" do
-      let(:after) { [->(**) { Dry::Monads::Success({}) }] }
+    context "when no on_success failures" do
+      let(:on_success) { [->(**) { Dry::Monads::Success({}) }] }
 
       it "doesn't report anything" do
         expect(call).to be_success
@@ -34,14 +34,14 @@ RSpec.describe Operations::Components::After do
       end
     end
 
-    it "returns the results of after calls and always successful" do
+    it "returns the results of on_success calls and always successful" do
       expect(call)
         .to be_success
         .and have_attributes(
           component: :operation,
           params: { name: "Batman" },
           context: { subject: 42, entity: "Entity" },
-          after: [
+          on_success: [
             Dry::Monads::Success(["Entity", { name: "Batman" }]),
             an_instance_of(Dry::Monads::Failure) & have_attributes(failure: an_instance_of(RuntimeError)),
             Dry::Monads::Failure(:error)
@@ -50,7 +50,7 @@ RSpec.describe Operations::Components::After do
         )
       expect(transaction).to have_received(:call).exactly(3).times
       expect(error_reporter).to have_received(:call).with(
-        "Operation side-effects went sideways",
+        "Operation on_success side-effects went sideways",
         result: call.as_json
       ).once
     end

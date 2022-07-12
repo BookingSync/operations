@@ -6,7 +6,7 @@ require "operations/components/policies"
 require "operations/components/preconditions"
 require "operations/components/idempotency"
 require "operations/components/operation"
-require "operations/components/after"
+require "operations/components/on_success"
 
 # This is an entry point interface for every operation in
 # the operations layer. Every operation instance consists of 4
@@ -108,10 +108,10 @@ require "operations/components/after"
 #    See {https://dry-rb.org/gems/dry-monads/1.3/} for details. Also,
 #    it is better to use Do notation for the implementation. If Success
 #    result contains a hash, it is returned as a part of the context.
-# 6. After calls run after the operation was successful and transaction
-#    was committed. Composite adds the result of the after calls to the
-#    operation result but in case of unsuccessful after calls, the
-#    operation is still marked as successful. Each particular after
+# 6. `on_success` calls run after the operation was successful and transaction
+#    was committed. Composite adds the result of the `on_success` calls to the
+#    operation result but in case of failed `on_success` calls, the
+#    operation is still marked as successful. Each particular `on_success`
 #    entry is wrapped inside of a dedicated DB transaction.
 #    Given this, avoid putting business logic here, only something
 #    that can be replayed. Each callable object is expected to have the
@@ -123,7 +123,7 @@ require "operations/components/after"
 class Operations::Command
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
-  COMPONENTS = %i[contract policies preconditions idempotency operation after].freeze
+  COMPONENTS = %i[contract policies preconditions idempotency operation on_success].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
 
   include Dry::Monads[:result]
@@ -152,7 +152,7 @@ class Operations::Command
   option :policies, Operations::Types::Array.of(Operations::Types.Interface(:call))
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :idempotency, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
-  option :after, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :on_success, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :form_model_map, Operations::Types::Hash.map(
     Operations::Types::Coercible::Array.of(
       Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)
@@ -192,13 +192,13 @@ class Operations::Command
     new(operation.new(**deps), **options)
   end
 
-  def initialize(operation, policy: UNDEFINED, policies: [UNDEFINED], precondition: nil, preconditions: [], **options)
+  def initialize(operation, policy: UNDEFINED, policies: [UNDEFINED], precondition: nil, preconditions: [], after: [], **options)
     policies_sum = Array.wrap(policy) + policies
     result_policies = policies_sum - [UNDEFINED] unless policies_sum == [UNDEFINED, UNDEFINED]
     options[:policies] = result_policies if result_policies
 
     preconditions.concat([precondition]) if precondition.present?
-    super(operation, preconditions: preconditions, **options)
+    super(operation, preconditions: preconditions, on_success: after, **options)
   end
 
   # Executes all the components in a particular order. Returns the result
@@ -299,7 +299,7 @@ class Operations::Command
       policies: policies.map { |policy| policy.class.name },
       preconditions: preconditions.map { |precondition| precondition.class.name },
       idempotency: idempotency.map { |idempotency_check| idempotency_check.class.name },
-      after: after.map { |after_component| after_component.class.name }
+      on_success: on_success.map { |on_success_component| on_success_component.class.name }
     }
   end
 
@@ -331,7 +331,7 @@ class Operations::Command
       yield component(:operation).call(contract_result.params, contract_result.context)
     end
 
-    Success(component(:after).call(result.params, result.context))
+    Success(component(:on_success).call(result.params, result.context))
   end
 
   def callable_monad(contract_result, call_idempotency: false)
@@ -341,9 +341,7 @@ class Operations::Command
 
     yield component(:policies).call(contract_result.params, contract_result.context)
 
-    if call_idempotency
-      idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context)
-    end
+    idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context) if call_idempotency
     preconditions_result = yield component(:preconditions).call(contract_result.params, contract_result.context)
 
     idempotency_result || preconditions_result

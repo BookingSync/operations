@@ -2,19 +2,19 @@
 
 require "operations/components/base"
 
-# This component handles `after:` callbacks passed to the
-# composite. Every `after:` entry is called in a separate
+# This component handles `on_success:` callbacks passed to the
+# composite. Every `on_success:` entry is called in a separate
 # transaction and any exception is rescued here so the
 # result of the whole operation is not affected.
 # If there is a failure in any entry, it is reported with
 # `error_reporter` proc.
-class Operations::Components::After < Operations::Components::Base
+class Operations::Components::OnSuccess < Operations::Components::Base
   include Dry::Monads::Do.for(:call_entry)
 
   param :callable, type: Operations::Types::Array.of(Operations::Types.Interface(:call))
 
   def call(params, context)
-    after_results = callable.map do |entry|
+    on_success_results = callable.map do |entry|
       call_entry(entry, params, **context)
     end
 
@@ -22,7 +22,7 @@ class Operations::Components::After < Operations::Components::Base
       component: :operation,
       params: params,
       context: context,
-      after: after_results
+      on_success: on_success_results
     ))
   end
 
@@ -43,9 +43,9 @@ class Operations::Components::After < Operations::Components::Base
   end
 
   def maybe_report_failure(result)
-    if result.after.any?(Failure)
+    if result.on_success.any?(Failure)
       error_reporter&.call(
-        "Operation side-effects went sideways",
+        "Operation on_success side-effects went sideways",
         result: result.as_json
       )
     end

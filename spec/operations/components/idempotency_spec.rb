@@ -30,7 +30,7 @@ RSpec.describe Operations::Components::Idempotency do
               component: :idempotency,
               params: { name: "Batman" },
               context: { subject: 42, additional: :value },
-              after: [],
+              on_success: [],
               errors: be_empty
             )
           )
@@ -49,7 +49,7 @@ RSpec.describe Operations::Components::Idempotency do
               component: :idempotency,
               params: { name: "Batman" },
               context: { subject: 42 },
-              after: [],
+              on_success: [],
               errors: be_empty
             )
           )
@@ -65,7 +65,7 @@ RSpec.describe Operations::Components::Idempotency do
             component: :idempotency,
             params: { name: "Batman" },
             context: { subject: 42 },
-            after: [],
+            on_success: [],
             errors: be_empty
           )
         )
