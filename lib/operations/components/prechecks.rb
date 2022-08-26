@@ -6,6 +6,10 @@ require "operations/components/base"
 class Operations::Components::Prechecks < Operations::Components::Base
   param :callable, type: Operations::Types::Array.of(Operations::Types.Interface(:call))
 
+  def callable?(context)
+    (required_context - context.keys).empty?
+  end
+
   def required_context
     @required_context ||= required_kwargs | context_keys
   end

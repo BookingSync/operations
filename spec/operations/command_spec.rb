@@ -182,7 +182,8 @@ RSpec.describe Operations::Command do
       end
     end
 
-    context "when policy failed" do
+    context "when policy failed even if contract failed and preconditions are not callable" do
+      let(:params) { {} }
       let(:context) { { admin: false } }
 
       it "returns a failed policy result" do
@@ -192,7 +193,7 @@ RSpec.describe Operations::Command do
           .and have_attributes(
             operation: composite,
             component: :policies,
-            params: { name: "Batman" },
+            params: {},
             context: { admin: false },
             on_success: [],
             errors: have_attributes(

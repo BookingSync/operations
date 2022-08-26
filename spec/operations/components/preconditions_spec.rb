@@ -130,6 +130,26 @@ RSpec.describe Operations::Components::Preconditions do
     end
   end
 
+  describe "#callable?" do
+    subject(:callable?) { component.callable?(context) }
+
+    let(:preconditions) do
+      [
+        ->(foo, subject1:, subject2:, **) {},
+        ->(subject1:, subject3: nil, **) {}
+      ]
+    end
+    let(:context) { { subject1: 42 } }
+
+    it { is_expected.to be(false) }
+
+    context "with required context" do
+      let(:context) { { subject1: 42, subject2: 43 } }
+
+      it { is_expected.to be(true) }
+    end
+  end
+
   describe "#required_context" do
     subject(:required_context) { component.required_context }
 
