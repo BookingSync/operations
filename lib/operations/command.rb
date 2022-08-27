@@ -192,7 +192,10 @@ class Operations::Command
     new(operation.new(**deps), **options)
   end
 
-  def initialize(operation, policy: UNDEFINED, policies: [UNDEFINED], precondition: nil, preconditions: [], after: [], **options)
+  def initialize(
+    operation, policy: UNDEFINED, policies: [UNDEFINED],
+    precondition: nil, preconditions: [], after: [], **options
+  )
     policies_sum = Array.wrap(policy) + policies
     result_policies = policies_sum - [UNDEFINED] unless policies_sum == [UNDEFINED, UNDEFINED]
     options[:policies] = result_policies if result_policies
@@ -337,11 +340,15 @@ class Operations::Command
   def callable_monad(contract_result, call_idempotency: false)
     # We need to check policies/preconditions at the beginning.
     # But since contract loads entities, we need to run it first.
-    yield contract_result if contract_result.failure? && !contract_has_all_required_context?(contract_result.context)
-
+    yield contract_result if contract_result.failure? && !component(:policies).callable?(contract_result.context)
     yield component(:policies).call(contract_result.params, contract_result.context)
 
-    idempotency_result = yield component(:idempotency).call(contract_result.params, contract_result.context) if call_idempotency
+    if call_idempotency
+      idempotency_result = yield component(:idempotency)
+        .call(contract_result.params, contract_result.context)
+    end
+
+    yield contract_result if contract_result.failure? && !component(:preconditions).callable?(contract_result.context)
     preconditions_result = yield component(:preconditions).call(contract_result.params, contract_result.context)
 
     idempotency_result || preconditions_result
@@ -353,11 +360,6 @@ class Operations::Command
     yield callable_monad(contract_result, call_idempotency: call_idempotency)
 
     contract_result
-  end
-
-  def contract_has_all_required_context?(context)
-    required_context = component(:policies).required_context | component(:preconditions).required_context
-    (required_context - context.keys).empty?
   end
 
   def operation_result(result)

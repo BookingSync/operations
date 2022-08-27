@@ -169,6 +169,21 @@ RSpec.describe Operations::Components::Policies do
     end
   end
 
+  describe "#callable?" do
+    subject(:callable?) { component.callable?(context) }
+
+    let(:policy) { ->(foo, bar:, baz: nil) {} }
+    let(:context) { { foo: 42 } }
+
+    it { is_expected.to be(false) }
+
+    context "with required context" do
+      let(:context) { { bar: 42 } }
+
+      it { is_expected.to be(true) }
+    end
+  end
+
   describe "#required_context" do
     subject(:required_context) { component.required_context }
 
