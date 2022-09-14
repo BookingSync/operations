@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # This class implements Rails form object compatibility layer
-# It is possib;e to configure form object attributes automatically
+# It is possible to configure form object attributes automatically
 # basing on Dry Schema user {Operations::Form::Builder}
 # @example
 #
