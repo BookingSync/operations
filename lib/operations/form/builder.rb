@@ -28,7 +28,7 @@ class Operations::Form::Builder
 
       case key
       when Dry::Schema::Key::Array
-        nested_form = traverse(key.member, form, key.name.underscore.classify, model_map, key_path)
+        nested_form = traverse(key.member, form, key.name.to_s.underscore.classify, model_map, key_path)
         form.attribute(key.name, form: nested_form, collection: true, **model_name(key_path, model_map))
       when Dry::Schema::Key::Hash
         traverse_hash(form, key, model_map, path)
