@@ -7,7 +7,7 @@ require "operations/components/preconditions"
 require "operations/components/idempotency"
 require "operations/components/operation"
 require "operations/components/on_success"
-
+require "operations/components/on_failure"
 # This is an entry point interface for every operation in
 # the operations layer. Every operation instance consists of 4
 # components: contract, policy, preconditions and operation
@@ -123,11 +123,11 @@ require "operations/components/on_success"
 class Operations::Command
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
-  COMPONENTS = %i[contract policies preconditions idempotency operation on_success].freeze
+  COMPONENTS = %i[contract policies preconditions idempotency operation on_success on_failure].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
 
   include Dry::Monads[:result]
-  include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad)
+  include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad, :execute_operation)
   include Dry::Equalizer(*COMPONENTS)
   extend Dry::Initializer
 
@@ -153,6 +153,7 @@ class Operations::Command
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :idempotency, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_success, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :on_failure, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :form_model_map, Operations::Types::Hash.map(
     Operations::Types::Coercible::Array.of(
       Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)
@@ -302,7 +303,8 @@ class Operations::Command
       policies: policies.map { |policy| policy.class.name },
       preconditions: preconditions.map { |precondition| precondition.class.name },
       idempotency: idempotency.map { |idempotency_check| idempotency_check.class.name },
-      on_success: on_success.map { |on_success_component| on_success_component.class.name }
+      on_success: on_success.map { |on_success_component| on_success_component.class.name },
+      on_failure: on_failure.map { |on_failure_component| on_failure_component.class.name }
     }
   end
 
@@ -328,13 +330,30 @@ class Operations::Command
   end
 
   def call_monad(params, context)
-    result = transaction.call do
+    operation_result = execute_operation(params, context)
+
+    if operation_result.success?
+      Success(component(:on_success).call(operation_result.params, operation_result.context))
+    else
+      unwrapped_operation_result = unwrap_monad(operation_result)
+      yield operation_result unless unwrapped_operation_result.component == :operation
+
+      on_failure_result = component(:on_failure).call(
+        unwrapped_operation_result.params,
+        unwrapped_operation_result.context
+      )
+      unwrapped_operation_result.merge(
+        on_failure: on_failure_result.on_failure
+      )
+    end
+  end
+
+  def execute_operation(params, context)
+    transaction.call do
       contract_result = yield validate_monad(params, context, call_idempotency: true)
 
       yield component(:operation).call(contract_result.params, contract_result.context)
     end
-
-    Success(component(:on_success).call(result.params, result.context))
   end
 
   def callable_monad(contract_result, call_idempotency: false)
