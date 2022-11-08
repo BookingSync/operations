@@ -115,6 +115,10 @@ require "operations/components/callback"
 #    Given this, avoid putting business logic here, only something
 #    that can be replayed. Each callable object is expected to have the
 #    same method's signature as operation's `call` method.
+# 7. `on_failure` calls run after the operation failed and transaction
+#    was rolled back. Composite adds the result of the `on_failure` calls to the
+#    operation result. Each particular `on_failure`
+#    entry is wrapped inside of a dedicated DB transaction.
 #
 # Every method in {Operations::Command} returns {Operations::Result} instance,
 # which contains all the artifacts and the information about the errors
