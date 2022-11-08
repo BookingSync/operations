@@ -6,8 +6,7 @@ require "operations/components/policies"
 require "operations/components/preconditions"
 require "operations/components/idempotency"
 require "operations/components/operation"
-require "operations/components/on_success"
-require "operations/components/on_failure"
+require "operations/components/callback"
 # This is an entry point interface for every operation in
 # the operations layer. Every operation instance consists of 4
 # components: contract, policy, preconditions and operation
@@ -319,13 +318,27 @@ class Operations::Command
 
   def component(identifier)
     (@components ||= {})[identifier] = begin
-      "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
-        send(identifier),
+      component_kwargs = {
         message_resolver: contract.message_resolver,
         info_reporter: info_reporter,
         error_reporter: error_reporter,
         transaction: transaction
-      )
+      }
+      callable = send(identifier)
+
+      case identifier
+      when :on_success, :on_failure
+        ::Operations::Components::Callback.new(
+          callable,
+          **component_kwargs,
+          callback_type: identifier
+        )
+      else
+        "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
+          callable,
+          **component_kwargs
+        )
+      end
     end
   end
 

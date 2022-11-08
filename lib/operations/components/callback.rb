@@ -2,18 +2,18 @@
 
 require "operations/components/base"
 
-# An ancestor for all the operation callbacks.
-# Holds shared methods.
-class Operations::Components::BaseCallback < Operations::Components::Base
+# This component handles `on_failure:` and `on_success` callbacks passed to the
+# composite. Every callback entry is called in a separate
+# transaction and any exception is rescued here so the
+# result of the whole operation is not affected.
+# If there is a failure in any entry, it is reported with a proc.
+class Operations::Components::Callback < Operations::Components::Base
   include Dry::Monads::Do.for(:call_entry)
 
+  CALLBACK_TYPES = %i[on_success on_failure].freeze
+
   param :callable, type: Operations::Types::Array.of(Operations::Types.Interface(:call))
-
-  def self.inherited(subclass)
-    super
-
-    subclass.const_set(:CALLBACK_NAME, subclass.name.demodulize.underscore.to_sym)
-  end
+  option :callback_type, type: Operations::Types::Coercible::Symbol.constrained(included_in: CALLBACK_TYPES)
 
   def call(params, context)
     results = callable.map do |entry|
@@ -24,7 +24,7 @@ class Operations::Components::BaseCallback < Operations::Components::Base
       component: :operation,
       params: params,
       context: context,
-      self.class::CALLBACK_NAME => results
+      callback_type => results
     ))
   end
 
@@ -45,9 +45,9 @@ class Operations::Components::BaseCallback < Operations::Components::Base
   end
 
   def maybe_report_failure(result)
-    if result.public_send(self.class::CALLBACK_NAME).any?(Failure)
+    if result.public_send(callback_type).any?(Failure)
       error_reporter&.call(
-        "Operation #{self.class::CALLBACK_NAME} side-effects went sideways",
+        "Operation #{callback_type} side-effects went sideways",
         result: result.as_json
       )
     end
