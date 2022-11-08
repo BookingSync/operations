@@ -346,7 +346,7 @@ class Operations::Command
     operation_result = execute_operation(params, context)
 
     if operation_result.success?
-      Success(component(:on_success).call(operation_result.params, operation_result.context))
+      component(:on_success).call(operation_result.params, operation_result.context)
     else
       unwrapped_operation_result = unwrap_monad(operation_result)
       yield operation_result unless unwrapped_operation_result.component == :operation
