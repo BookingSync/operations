@@ -335,6 +335,35 @@ RSpec.describe Operations::Command do
               )
             )
         end
+
+        context "when on_failure callback failed" do
+          let(:on_failure) { [->(**) { Dry::Monads::Failure(:wow) }] }
+          let(:composite_options) { { error_reporter: error_reporter } }
+          let(:error_reporter) { proc {} }
+
+          before { allow(error_reporter).to receive(:call) }
+
+          it "returns a normalized operation result" do
+            expect { call }.not_to change { User.count }
+            expect(call)
+              .to be_failure
+              .and have_attributes(
+                operation: composite,
+                component: :operation,
+                params: { name: "Batman" },
+                context: { admin: true, error: nil },
+                on_success: [],
+                on_failure: [Dry::Monads::Failure(:wow)],
+                errors: have_attributes(
+                  to_h: { nil => ["Error"] }
+                )
+              )
+            expect(error_reporter).to have_received(:call).with(
+              "Operation on_failure side-effects went sideways",
+              include(:result)
+            )
+          end
+        end
       end
 
       it "returns a successful result" do
@@ -350,6 +379,33 @@ RSpec.describe Operations::Command do
             on_failure: [],
             errors: be_empty
           )
+      end
+
+      context "when on_success callback failed" do
+        let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
+        let(:composite_options) { { error_reporter: error_reporter } }
+        let(:error_reporter) { proc {} }
+
+        before { allow(error_reporter).to receive(:call) }
+
+        it "returns a normalized operation result" do
+          expect { call }.to change { User.count }.by(1)
+          expect(call)
+            .to be_success
+            .and have_attributes(
+              operation: composite,
+              component: :operation,
+              params: { name: "Batman" },
+              context: { admin: true, error: nil, additional: :value },
+              on_success: [Dry::Monads::Failure(:yay)],
+              on_failure: [],
+              errors: be_empty
+            )
+          expect(error_reporter).to have_received(:call).with(
+            "Operation on_success side-effects went sideways",
+            include(:result)
+          )
+        end
       end
     end
   end
