@@ -25,3 +25,7 @@ Metrics/MethodLength:
 # Configuration parameters: CountKeywordArgs, MaxOptionalParameters.
 Metrics/ParameterLists:
   Max: 7
+
+Lint/RedundantRequireStatement:
+  Exclude:
+    - 'lib/operations.rb'
