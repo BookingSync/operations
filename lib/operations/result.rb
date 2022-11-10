@@ -15,6 +15,7 @@ class Operations::Result
   option :params, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
   option :context, type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any)
   option :on_success, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }
+  option :on_failure, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }
   option :errors, type: Operations::Types.Interface(:call) | Operations::Types::Instance(Dry::Validation::MessageSet),
     default: proc { Dry::Validation::MessageSet.new([]).freeze }
 
@@ -98,6 +99,7 @@ class Operations::Result
       params: params,
       context: context_as_json,
       on_success: on_success.as_json,
+      on_failure: on_failure.as_json,
       errors: errors(full: true).to_h
     }
   end

@@ -1,9 +1,16 @@
 # frozen_string_literal: true
 
-RSpec.describe Operations::Components::OnSuccess do
-  subject(:component) { described_class.new(on_success, transaction: transaction, error_reporter: error_reporter) }
+RSpec.describe Operations::Components::Callback do
+  subject(:component) do
+    described_class.new(
+      callable,
+      transaction: transaction,
+      error_reporter: error_reporter,
+      callback_type: :on_success
+    )
+  end
 
-  let(:on_success) do
+  let(:callable) do
     [
       ->(params, entity:, **) { Dry::Monads::Success([entity, params]) },
       ->(**) { raise "it hits the fan" },
@@ -24,8 +31,8 @@ RSpec.describe Operations::Components::OnSuccess do
     let(:params) { { name: "Batman" } }
     let(:context) { { subject: 42, entity: "Entity" } }
 
-    context "when no on_success failures" do
-      let(:on_success) { [->(**) { Dry::Monads::Success({}) }] }
+    context "when callback does not failure" do
+      let(:callable) { [->(**) { Dry::Monads::Success({}) }] }
 
       it "doesn't report anything" do
         expect(call).to be_success
@@ -34,7 +41,7 @@ RSpec.describe Operations::Components::OnSuccess do
       end
     end
 
-    it "returns the results of on_success calls and always successful" do
+    it "returns the results of callable calls and always successful" do
       expect(call)
         .to be_success
         .and have_attributes(

@@ -2,19 +2,21 @@
 
 require "operations/components/base"
 
-# This component handles `on_success:` callbacks passed to the
-# composite. Every `on_success:` entry is called in a separate
+# This component handles `on_failure:` and `on_success` callbacks passed to the
+# composite. Every callback entry is called in a separate
 # transaction and any exception is rescued here so the
 # result of the whole operation is not affected.
-# If there is a failure in any entry, it is reported with
-# `error_reporter` proc.
-class Operations::Components::OnSuccess < Operations::Components::Base
+# If there is a failure in any entry, it is reported with a proc.
+class Operations::Components::Callback < Operations::Components::Base
   include Dry::Monads::Do.for(:call_entry)
 
+  CALLBACK_TYPES = %i[on_success on_failure].freeze
+
   param :callable, type: Operations::Types::Array.of(Operations::Types.Interface(:call))
+  option :callback_type, type: Operations::Types::Coercible::Symbol.constrained(included_in: CALLBACK_TYPES)
 
   def call(params, context)
-    on_success_results = callable.map do |entry|
+    results = callable.map do |entry|
       call_entry(entry, params, **context)
     end
 
@@ -22,7 +24,7 @@ class Operations::Components::OnSuccess < Operations::Components::Base
       component: :operation,
       params: params,
       context: context,
-      on_success: on_success_results
+      callback_type => results
     ))
   end
 
@@ -43,9 +45,9 @@ class Operations::Components::OnSuccess < Operations::Components::Base
   end
 
   def maybe_report_failure(result)
-    if result.on_success.any?(Failure)
+    if result.public_send(callback_type).any?(Failure)
       error_reporter&.call(
-        "Operation on_success side-effects went sideways",
+        "Operation #{callback_type} side-effects went sideways",
         result: result.as_json
       )
     end

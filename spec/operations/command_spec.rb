@@ -8,7 +8,8 @@ RSpec.describe Operations::Command do
       policies: policies,
       preconditions: preconditions,
       idempotency: idempotency_checks,
-      after: on_success,
+      on_success: on_success,
+      on_failure: on_failure,
       **composite_options
     )
   end
@@ -27,6 +28,7 @@ RSpec.describe Operations::Command do
   let(:preconditions) { [->(error:, **) { error }] }
   let(:idempotency_checks) { [] }
   let(:on_success) { [->(**) { Dry::Monads::Success(:yay) }] }
+  let(:on_failure) { [->(**) { Dry::Monads::Success(:wow) }] }
   let(:composite_options) { {} }
 
   describe ".new" do
@@ -36,7 +38,8 @@ RSpec.describe Operations::Command do
           operation,
           contract: contract,
           preconditions: preconditions,
-          after: on_success
+          on_success: on_success,
+          on_failure: on_failure
         )
       end
 
@@ -75,6 +78,7 @@ RSpec.describe Operations::Command do
         policies: [an_instance_of(operation_class::Policy) & have_attributes(repo: repo)],
         preconditions: [],
         on_success: [],
+        on_failure: [],
         form_class: be < Operations::Form
       )
     end
@@ -96,6 +100,7 @@ RSpec.describe Operations::Command do
           policies: [an_instance_of(operation_class::Policy) & have_attributes(repo: repo)],
           preconditions: [an_instance_of(operation_class::Precondition) & have_attributes(repo: repo)],
           on_success: [],
+          on_failure: [],
           form_class: be < Operations::Form
         )
       end
@@ -118,6 +123,7 @@ RSpec.describe Operations::Command do
           policies: [an_instance_of(operation_class::Policy) & have_attributes(repo: repo)],
           preconditions: [],
           on_success: [],
+          on_failure: [],
           form_class: be < Operations::Form
         )
       end
@@ -151,9 +157,19 @@ RSpec.describe Operations::Command do
     end
 
     it { is_expected.to eq(composite) }
-    it { is_expected.to eq(build(policies: [policy], preconditions: preconditions, after: on_success)) }
     it { is_expected.not_to eq(build(policies: [policy])) }
     it { is_expected.not_to eq(build(policy: -> {}, preconditions: preconditions)) }
+
+    specify do
+      expect(composite).to eq(
+        build(
+          policies: [policy],
+          preconditions: preconditions,
+          after: on_success,
+          on_failure: on_failure
+        )
+      )
+    end
   end
 
   describe "#call" do
@@ -175,6 +191,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: {},
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { name: ["is missing"] }
             )
@@ -196,6 +213,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: false },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized",
@@ -220,6 +238,7 @@ RSpec.describe Operations::Command do
             params: { name: "Batman" },
             context: { admin: false, owner: true },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized",
@@ -243,6 +262,7 @@ RSpec.describe Operations::Command do
             params: { name: "Batman" },
             context: { admin: true, error: "Error" },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => ["Error"] }
             )
@@ -265,6 +285,7 @@ RSpec.describe Operations::Command do
             params: { name: "Batman" },
             context: { admin: true, error: nil, additional: :value },
             on_success: [],
+            on_failure: [],
             errors: be_empty
           )
       end
@@ -284,6 +305,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: true },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { name: ["is missing"] }
             )
@@ -307,10 +329,40 @@ RSpec.describe Operations::Command do
               params: { name: "Batman" },
               context: { admin: true, error: nil },
               on_success: [],
+              on_failure: [Dry::Monads::Success(:wow)],
               errors: have_attributes(
                 to_h: { nil => ["Error"] }
               )
             )
+        end
+
+        context "when on_failure callback failed" do
+          let(:on_failure) { [->(**) { Dry::Monads::Failure(:wow) }] }
+          let(:composite_options) { { error_reporter: error_reporter } }
+          let(:error_reporter) { proc {} }
+
+          before { allow(error_reporter).to receive(:call) }
+
+          it "returns a normalized operation result" do
+            expect { call }.not_to change { User.count }
+            expect(call)
+              .to be_failure
+              .and have_attributes(
+                operation: composite,
+                component: :operation,
+                params: { name: "Batman" },
+                context: { admin: true, error: nil },
+                on_success: [],
+                on_failure: [Dry::Monads::Failure(:wow)],
+                errors: have_attributes(
+                  to_h: { nil => ["Error"] }
+                )
+              )
+            expect(error_reporter).to have_received(:call).with(
+              "Operation on_failure side-effects went sideways",
+              include(:result)
+            )
+          end
         end
       end
 
@@ -324,8 +376,36 @@ RSpec.describe Operations::Command do
             params: { name: "Batman" },
             context: { admin: true, error: nil, additional: :value },
             on_success: [Dry::Monads::Success(:yay)],
+            on_failure: [],
             errors: be_empty
           )
+      end
+
+      context "when on_success callback failed" do
+        let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
+        let(:composite_options) { { error_reporter: error_reporter } }
+        let(:error_reporter) { proc {} }
+
+        before { allow(error_reporter).to receive(:call) }
+
+        it "returns a normalized operation result" do
+          expect { call }.to change { User.count }.by(1)
+          expect(call)
+            .to be_success
+            .and have_attributes(
+              operation: composite,
+              component: :operation,
+              params: { name: "Batman" },
+              context: { admin: true, error: nil, additional: :value },
+              on_success: [Dry::Monads::Failure(:yay)],
+              on_failure: [],
+              errors: be_empty
+            )
+          expect(error_reporter).to have_received(:call).with(
+            "Operation on_success side-effects went sideways",
+            include(:result)
+          )
+        end
       end
     end
   end
@@ -411,6 +491,7 @@ RSpec.describe Operations::Command do
           params: { name: "TEST" },
           context: { admin: true, error: nil },
           on_success: [],
+          on_failure: [],
           errors: be_empty
         )
     end
@@ -427,6 +508,7 @@ RSpec.describe Operations::Command do
             params: { name: nil },
             context: { admin: true, error: nil },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { name: ["must be a string"] }
             )
@@ -447,6 +529,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: true },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { name: ["is missing"] }
             )
@@ -466,6 +549,7 @@ RSpec.describe Operations::Command do
             params: { name: "TEST" },
             context: { admin: false, error: nil },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized",
@@ -488,6 +572,7 @@ RSpec.describe Operations::Command do
             params: { name: "TEST" },
             context: { admin: true, error: "Error" },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => ["Error"] }
             )
@@ -528,6 +613,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: true },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { name: ["is missing"] }
             )
@@ -547,6 +633,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: false, error: nil },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized",
@@ -569,6 +656,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: true, error: "Error" },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => ["Error"] }
             )
@@ -585,6 +673,7 @@ RSpec.describe Operations::Command do
           params: {},
           context: { admin: true, error: nil },
           on_success: [],
+          on_failure: [],
           errors: be_empty
         )
     end
@@ -621,6 +710,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { admin: false },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => [
                 text: "Unauthorized",
@@ -640,6 +730,7 @@ RSpec.describe Operations::Command do
           params: {},
           context: { admin: true },
           on_success: [],
+          on_failure: [],
           errors: be_empty
         )
     end
@@ -676,6 +767,7 @@ RSpec.describe Operations::Command do
             params: {},
             context: { error: "Error" },
             on_success: [],
+            on_failure: [],
             errors: have_attributes(
               to_h: { nil => ["Error"] }
             )
@@ -692,6 +784,7 @@ RSpec.describe Operations::Command do
           params: {},
           context: { error: nil },
           on_success: [],
+          on_failure: [],
           errors: be_empty
         )
     end
@@ -725,6 +818,7 @@ RSpec.describe Operations::Command do
             precondition: DummyOperation::Precondition.new,
             idempotency: [DummyOperation::IdempotencyCheck.new],
             on_success: [DummyOperation::OnSuccess.new],
+            on_failure: [DummyOperation::OnFailure.new],
             form_base: DummyOperation::FormBase,
             form_class: DummyOperation::FormClass,
             form_model_map: { attribute: "attribute_map" },
@@ -747,6 +841,9 @@ RSpec.describe Operations::Command do
           def call; end
         end)
         const_set(:OnSuccess, Class.new do
+          def call; end
+        end)
+        const_set(:OnFailure, Class.new do
           def call; end
         end)
         const_set(:IdempotencyCheck, Class.new do
@@ -781,6 +878,7 @@ RSpec.describe Operations::Command do
         preconditions: ["DummyOperation::Precondition"],
         idempotency: ["DummyOperation::IdempotencyCheck"],
         on_success: ["DummyOperation::OnSuccess"],
+        on_failure: ["DummyOperation::OnFailure"],
         form_base: "DummyOperation::FormBase",
         form_class: "DummyOperation::FormClass",
         form_hydrator: "DummyOperation::FormHydrator",
