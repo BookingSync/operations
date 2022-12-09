@@ -6,6 +6,11 @@ class Operations::Components::Base
   include Dry::Monads[:result]
   extend Dry::Initializer
 
+  MONADS_DO_WRAPPER_SIGNATURES = [
+    [%i[rest *], %i[block &]],
+    [%i[rest *], %i[keyrest **], %i[block &]]
+  ].freeze
+
   param :callable, type: Operations::Types.Interface(:call)
   option :message_resolver, type: Operations::Types.Interface(:call), optional: true
   option :info_reporter, type: Operations::Types::Nil | Operations::Types.Interface(:call), optional: true
@@ -27,7 +32,7 @@ class Operations::Components::Base
       # calling super_method here because `Operations::Convenience`
       # calls `include Dry::Monads::Do.for(:call)` which creates
       # a delegator method around the original one.
-      method = method.super_method if method.parameters == [%i[rest *], %i[block &]]
+      method = method.super_method if MONADS_DO_WRAPPER_SIGNATURES.include?(method.parameters)
       method.parameters.filter_map do |(type, name)|
         name if types.include?(type)
       end
