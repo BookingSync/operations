@@ -357,7 +357,9 @@ class Operations::Command
 
       on_failure_result = component(:on_failure).call(
         unwrapped_operation_result.params,
-        unwrapped_operation_result.context
+        unwrapped_operation_result.context.merge(
+          operation_failure: unwrapped_operation_result.errors.to_h
+        )
       )
       unwrapped_operation_result.merge(
         on_failure: on_failure_result.on_failure

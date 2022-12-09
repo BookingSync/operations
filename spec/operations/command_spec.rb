@@ -28,7 +28,8 @@ RSpec.describe Operations::Command do
   let(:preconditions) { [->(error:, **) { error }] }
   let(:idempotency_checks) { [] }
   let(:on_success) { [->(**) { Dry::Monads::Success(:yay) }] }
-  let(:on_failure) { [->(**) { Dry::Monads::Success(:wow) }] }
+  let(:on_failure) { [on_failure_callback] }
+  let(:on_failure_callback) { ->(_, **_) { Dry::Monads::Success(:wow) } }
   let(:composite_options) { {} }
 
   describe ".new" do
@@ -319,6 +320,8 @@ RSpec.describe Operations::Command do
       context "when operation failed" do
         let(:operation) { ->(**) { Dry::Monads::Failure("Error") } }
 
+        before { allow(on_failure_callback).to receive(:call).and_call_original }
+
         it "returns a normalized operation result" do
           expect { call }.not_to change { User.count }
           expect(call)
@@ -337,7 +340,7 @@ RSpec.describe Operations::Command do
         end
 
         context "when on_failure callback failed" do
-          let(:on_failure) { [->(**) { Dry::Monads::Failure(:wow) }] }
+          let(:on_failure_callback) { ->(_, **_) { Dry::Monads::Failure(:wow) } }
           let(:composite_options) { { error_reporter: error_reporter } }
           let(:error_reporter) { proc {} }
 
@@ -358,6 +361,10 @@ RSpec.describe Operations::Command do
                   to_h: { nil => ["Error"] }
                 )
               )
+            expect(on_failure_callback).to have_received(:call).with(
+              { name: "Batman" },
+              { admin: true, error: nil, operation_failure: { nil => ["Error"] } }
+            )
             expect(error_reporter).to have_received(:call).with(
               "Operation on_failure side-effects went sideways",
               include(:result)
