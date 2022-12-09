@@ -19,3 +19,7 @@ AllCops:
   TargetRubyVersion: 2.7
   Exclude:
     - gemfiles/*
+
+Lint/RedundantRequireStatement:
+  Exclude:
+    - 'lib/operations.rb'
