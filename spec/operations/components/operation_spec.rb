@@ -3,7 +3,15 @@
 RSpec.describe Operations::Components::Operation do
   subject(:component) { described_class.new(operation, message_resolver: message_resolver) }
 
-  let(:operation) { ->(params, entity:, **) { Dry::Monads::Success({ passed: [entity, params] }) } }
+  let(:operation) do
+    Class.new do
+      include Dry::Monads::Do.for(:call)
+
+      def call(params, entity:, **)
+        Dry::Monads::Success({ passed: [entity, params] })
+      end
+    end.new
+  end
   let(:message_resolver) { Operations::Contract::MessagesResolver.new(backend) }
   let(:backend) { Dry::Schema::Messages::YAML.build.merge(translations) }
   let(:translations) do
