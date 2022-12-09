@@ -29,7 +29,7 @@ RSpec.describe Operations::Command do
   let(:idempotency_checks) { [] }
   let(:on_success) { [->(**) { Dry::Monads::Success(:yay) }] }
   let(:on_failure) { [on_failure_callback] }
-  let(:on_failure_callback) { ->(_, **_) { Dry::Monads::Success(:wow) } }
+  let(:on_failure_callback) { ->(_, **) { Dry::Monads::Success(:wow) } }
   let(:composite_options) { {} }
 
   describe ".new" do
@@ -340,7 +340,7 @@ RSpec.describe Operations::Command do
         end
 
         context "when on_failure callback failed" do
-          let(:on_failure_callback) { ->(_, **_) { Dry::Monads::Failure(:wow) } }
+          let(:on_failure_callback) { ->(_, **) { Dry::Monads::Failure(:wow) } }
           let(:composite_options) { { error_reporter: error_reporter } }
           let(:error_reporter) { proc {} }
 
