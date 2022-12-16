@@ -15,7 +15,6 @@ class Operations::Components::Base
   option :message_resolver, type: Operations::Types.Interface(:call), optional: true
   option :info_reporter, type: Operations::Types::Nil | Operations::Types.Interface(:call), optional: true
   option :error_reporter, type: Operations::Types::Nil | Operations::Types.Interface(:call), optional: true
-  option :transaction, type: Operations::Types.Interface(:call), optional: true
 
   private
 
