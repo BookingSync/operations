@@ -8,8 +8,7 @@ gem "rubocop", require: false
 gem "rubocop-performance", require: false
 gem "rubocop-rails", require: false
 gem "rubocop-rspec", require: false
-gem "activesupport", "~> 6.0.0"
-gem "activemodel", "~> 6.0.0"
 gem "activerecord", "~> 6.0.0"
+gem "activesupport", "~> 6.0.0"
 
 gemspec path: "../"

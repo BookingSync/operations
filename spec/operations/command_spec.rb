@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Operations::Command do
-  subject(:composite) do
+  subject(:command) do
     described_class.new(
       operation,
       contract: contract,
@@ -10,7 +10,7 @@ RSpec.describe Operations::Command do
       idempotency: idempotency_checks,
       on_success: on_success,
       on_failure: on_failure,
-      **composite_options
+      **command_options
     )
   end
 
@@ -30,11 +30,11 @@ RSpec.describe Operations::Command do
   let(:on_success) { [->(**) { Dry::Monads::Success(:yay) }] }
   let(:on_failure) { [on_failure_callback] }
   let(:on_failure_callback) { ->(_, **) { Dry::Monads::Success(:wow) } }
-  let(:composite_options) { {} }
+  let(:command_options) { {} }
 
   describe ".new" do
     context "without policy and policies options" do
-      subject(:composite) do
+      subject(:command) do
         described_class.new(
           operation,
           contract: contract,
@@ -44,7 +44,7 @@ RSpec.describe Operations::Command do
         )
       end
 
-      specify { expect { composite }.to raise_error(KeyError) }
+      specify { expect { command }.to raise_error(KeyError) }
     end
   end
 
@@ -72,7 +72,7 @@ RSpec.describe Operations::Command do
     end
     let(:repo) { double }
 
-    it "initializes composite operation with all the nested classes" do
+    it "initializes command operation with all the nested classes" do
       expect(build).to have_attributes(
         operation: an_instance_of(operation_class) & have_attributes(repo: repo),
         contract: an_instance_of(operation_class::Contract) & have_attributes(repo: repo),
@@ -94,7 +94,7 @@ RSpec.describe Operations::Command do
         end)
       end
 
-      it "initializes composite operation also with precondition" do
+      it "initializes command operation also with precondition" do
         expect(build).to have_attributes(
           operation: an_instance_of(operation_class) & have_attributes(repo: repo),
           contract: an_instance_of(operation_class::Contract) & have_attributes(repo: repo),
@@ -117,7 +117,7 @@ RSpec.describe Operations::Command do
         end
       end
 
-      it "initializes composite operation with all the nested classes and the alternative contract" do
+      it "initializes command operation with all the nested classes and the alternative contract" do
         expect(build).to have_attributes(
           operation: an_instance_of(operation_class) & have_attributes(repo: repo),
           contract: an_instance_of(alternative_contract_class) & have_attributes(repo: repo),
@@ -132,7 +132,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#form_class" do
-    subject(:form_class) { composite.form_class }
+    subject(:form_class) { command.form_class }
 
     let(:contract) do
       Operations::Contract.build do
@@ -142,7 +142,7 @@ RSpec.describe Operations::Command do
         end
       end
     end
-    let(:composite_options) { { form_model_map: { name: "Dummy" } } }
+    let(:command_options) { { form_model_map: { name: "Dummy" } } }
 
     it "passes model map to builder" do
       expect(form_class).to have_attributes(attributes: {
@@ -157,12 +157,12 @@ RSpec.describe Operations::Command do
       described_class.new(operation, contract: contract, **kwargs)
     end
 
-    it { is_expected.to eq(composite) }
+    it { is_expected.to eq(command) }
     it { is_expected.not_to eq(build(policies: [policy])) }
     it { is_expected.not_to eq(build(policy: -> {}, preconditions: preconditions)) }
 
     specify do
-      expect(composite).to eq(
+      expect(command).to eq(
         build(
           policies: [policy],
           preconditions: preconditions,
@@ -174,7 +174,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#call" do
-    subject(:call) { composite.call(params, **context) }
+    subject(:call) { command.call(params, **context) }
 
     let(:params) { { name: "Batman" } }
     let(:context) { {} }
@@ -187,7 +187,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :contract,
             params: {},
             context: {},
@@ -209,7 +209,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :policies,
             params: {},
             context: { admin: false },
@@ -234,7 +234,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :policies,
             params: { name: "Batman" },
             context: { admin: false, owner: true },
@@ -258,7 +258,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :preconditions,
             params: { name: "Batman" },
             context: { admin: true, error: "Error" },
@@ -281,7 +281,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_success
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :idempotency,
             params: { name: "Batman" },
             context: { admin: true, error: nil, additional: :value },
@@ -301,7 +301,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :contract,
             params: {},
             context: { admin: true },
@@ -327,7 +327,7 @@ RSpec.describe Operations::Command do
           expect(call)
             .to be_failure
             .and have_attributes(
-              operation: composite,
+              operation: command,
               component: :operation,
               params: { name: "Batman" },
               context: { admin: true, error: nil },
@@ -341,7 +341,7 @@ RSpec.describe Operations::Command do
 
         context "when on_failure callback failed" do
           let(:on_failure_callback) { ->(_, **) { Dry::Monads::Failure(:wow) } }
-          let(:composite_options) { { error_reporter: error_reporter } }
+          let(:command_options) { { error_reporter: error_reporter } }
           let(:error_reporter) { proc {} }
 
           before { allow(error_reporter).to receive(:call) }
@@ -351,7 +351,7 @@ RSpec.describe Operations::Command do
             expect(call)
               .to be_failure
               .and have_attributes(
-                operation: composite,
+                operation: command,
                 component: :operation,
                 params: { name: "Batman" },
                 context: { admin: true, error: nil },
@@ -378,7 +378,7 @@ RSpec.describe Operations::Command do
         expect(call)
           .to be_success
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :operation,
             params: { name: "Batman" },
             context: { admin: true, error: nil, additional: :value },
@@ -390,7 +390,7 @@ RSpec.describe Operations::Command do
 
       context "when on_success callback failed" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
-        let(:composite_options) { { error_reporter: error_reporter } }
+        let(:command_options) { { error_reporter: error_reporter } }
         let(:error_reporter) { proc {} }
 
         before { allow(error_reporter).to receive(:call) }
@@ -400,7 +400,7 @@ RSpec.describe Operations::Command do
           expect(call)
             .to be_success
             .and have_attributes(
-              operation: composite,
+              operation: command,
               component: :operation,
               params: { name: "Batman" },
               context: { admin: true, error: nil, additional: :value },
@@ -418,7 +418,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#call!" do
-    subject(:call!) { composite.call!(params, **context) }
+    subject(:call!) { command.call!(params, **context) }
 
     let(:params) { { name: "Batman" } }
     let(:context) { { admin: true, error: nil } }
@@ -439,7 +439,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#try_call!" do
-    subject(:try_call!) { composite.try_call!(params, **context) }
+    subject(:try_call!) { command.try_call!(params, **context) }
 
     let(:params) { { name: "Batman" } }
     let(:context) { { admin: true, error: nil } }
@@ -484,7 +484,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#validate" do
-    subject(:validate) { composite.validate(params, **context) }
+    subject(:validate) { command.validate(params, **context) }
 
     let(:context) { { admin: true, error: nil } }
     let(:params) { { name: "TEST" } }
@@ -493,7 +493,7 @@ RSpec.describe Operations::Command do
       expect(validate)
         .to be_success
         .and have_attributes(
-          operation: composite,
+          operation: command,
           component: :contract,
           params: { name: "TEST" },
           context: { admin: true, error: nil },
@@ -510,7 +510,7 @@ RSpec.describe Operations::Command do
         expect(validate)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :contract,
             params: { name: nil },
             context: { admin: true, error: nil },
@@ -531,7 +531,7 @@ RSpec.describe Operations::Command do
         expect(validate)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :contract,
             params: {},
             context: { admin: true },
@@ -551,7 +551,7 @@ RSpec.describe Operations::Command do
         expect(validate)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :policies,
             params: { name: "TEST" },
             context: { admin: false, error: nil },
@@ -574,7 +574,7 @@ RSpec.describe Operations::Command do
         expect(validate)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :preconditions,
             params: { name: "TEST" },
             context: { admin: true, error: "Error" },
@@ -589,7 +589,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#valid?" do
-    subject(:valid?) { composite.valid?(params, **context) }
+    subject(:valid?) { command.valid?(params, **context) }
 
     let(:context) { { admin: true, error: nil } }
     let(:params) { { name: "TEST" } }
@@ -604,7 +604,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#callable" do
-    subject(:callable) { composite.callable(**context) }
+    subject(:callable) { command.callable(**context) }
 
     let(:context) { { admin: true, error: nil } }
 
@@ -615,7 +615,7 @@ RSpec.describe Operations::Command do
         expect(callable)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :contract,
             params: {},
             context: { admin: true },
@@ -635,7 +635,7 @@ RSpec.describe Operations::Command do
         expect(callable)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :policies,
             params: {},
             context: { admin: false, error: nil },
@@ -658,7 +658,7 @@ RSpec.describe Operations::Command do
         expect(callable)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :preconditions,
             params: {},
             context: { admin: true, error: "Error" },
@@ -675,7 +675,7 @@ RSpec.describe Operations::Command do
       expect(callable)
         .to be_success
         .and have_attributes(
-          operation: composite,
+          operation: command,
           component: :preconditions,
           params: {},
           context: { admin: true, error: nil },
@@ -687,7 +687,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#callable?" do
-    subject(:callable?) { composite.callable?(**context) }
+    subject(:callable?) { command.callable?(**context) }
 
     let(:context) { { admin: true, error: nil } }
 
@@ -701,7 +701,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#allowed" do
-    subject(:allowed) { composite.allowed(**context) }
+    subject(:allowed) { command.allowed(**context) }
 
     let(:context) { { admin: true } }
 
@@ -712,7 +712,7 @@ RSpec.describe Operations::Command do
         expect(allowed)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :policies,
             params: {},
             context: { admin: false },
@@ -732,7 +732,7 @@ RSpec.describe Operations::Command do
       expect(allowed)
         .to be_success
         .and have_attributes(
-          operation: composite,
+          operation: command,
           component: :policies,
           params: {},
           context: { admin: true },
@@ -744,7 +744,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#allowed?" do
-    subject(:allowed?) { composite.allowed?(**context) }
+    subject(:allowed?) { command.allowed?(**context) }
 
     let(:context) { { admin: true } }
 
@@ -758,7 +758,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#possible" do
-    subject(:possible) { composite.possible(**context) }
+    subject(:possible) { command.possible(**context) }
 
     let(:context) { { error: nil } }
 
@@ -769,7 +769,7 @@ RSpec.describe Operations::Command do
         expect(possible)
           .to be_failure
           .and have_attributes(
-            operation: composite,
+            operation: command,
             component: :preconditions,
             params: {},
             context: { error: "Error" },
@@ -786,7 +786,7 @@ RSpec.describe Operations::Command do
       expect(possible)
         .to be_success
         .and have_attributes(
-          operation: composite,
+          operation: command,
           component: :preconditions,
           params: {},
           context: { error: nil },
@@ -798,7 +798,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#possible?" do
-    subject(:possible?) { composite.possible?(**context) }
+    subject(:possible?) { command.possible?(**context) }
 
     let(:context) { { error: nil } }
 

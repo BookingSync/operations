@@ -4,9 +4,9 @@ RSpec.describe Operations::Components::Callback do
   subject(:component) do
     described_class.new(
       callable,
-      transaction: transaction,
+      after_commit: after_commit,
       error_reporter: error_reporter,
-      callback_type: :on_success
+      callback_type: callback_type
     )
   end
 
@@ -17,11 +17,12 @@ RSpec.describe Operations::Components::Callback do
       ->(**) { Dry::Monads::Failure(:error) }
     ]
   end
-  let(:transaction) { instance_double(Proc) }
+  let(:after_commit) { instance_double(Proc) }
   let(:error_reporter) { instance_double(Proc) }
+  let(:callback_type) { :on_success }
 
   before do
-    allow(transaction).to receive(:call).and_yield
+    allow(after_commit).to receive(:call).and_yield
     allow(error_reporter).to receive(:call)
   end
 
@@ -36,7 +37,7 @@ RSpec.describe Operations::Components::Callback do
 
       it "doesn't report anything" do
         expect(call).to be_success
-        expect(transaction).to have_received(:call).once
+        expect(after_commit).to have_received(:call).once
         expect(error_reporter).not_to have_received(:call)
       end
     end
@@ -55,11 +56,36 @@ RSpec.describe Operations::Components::Callback do
           ],
           errors: be_empty
         )
-      expect(transaction).to have_received(:call).exactly(3).times
+      expect(after_commit).to have_received(:call).exactly(3).times
       expect(error_reporter).to have_received(:call).with(
         "Operation on_success side-effects went sideways",
         result: call.as_json
       ).once
+    end
+
+    context "when on_failure" do
+      let(:callback_type) { :on_failure }
+
+      it "returns the results of callable calls" do
+        expect(call)
+          .to be_success
+          .and have_attributes(
+            component: :operation,
+            params: { name: "Batman" },
+            context: { subject: 42, entity: "Entity" },
+            on_failure: [
+              Dry::Monads::Success(["Entity", { name: "Batman" }]),
+              an_instance_of(Dry::Monads::Failure) & have_attributes(failure: an_instance_of(RuntimeError)),
+              Dry::Monads::Failure(:error)
+            ],
+            errors: be_empty
+          )
+        expect(after_commit).not_to have_received(:call)
+        expect(error_reporter).to have_received(:call).with(
+          "Operation on_failure side-effects went sideways",
+          result: call.as_json
+        ).once
+      end
     end
   end
 end

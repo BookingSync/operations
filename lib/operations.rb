@@ -9,6 +9,7 @@ require "active_support/core_ext/class/attribute"
 require "active_support/core_ext/module/delegation"
 require "active_support/inflector/inflections"
 require "active_model/naming"
+require "after_commit_everywhere"
 require "operations/version"
 require "operations/types"
 require "operations/configuration"
@@ -26,10 +27,9 @@ module Operations
   class Error < StandardError
   end
 
-  DEFAULT_ERROR_REPORTER = lambda do |message, payload|
-    Sentry.capture_message(message, extra: payload)
-  end
-  DEFAULT_TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(&block) }
+  DEFAULT_ERROR_REPORTER = ->(message, payload) { Sentry.capture_message(message, extra: payload) }
+  DEFAULT_TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(requires_new: true, &block) }
+  DEFAULT_AFTER_COMMIT = ->(&block) { AfterCommitEverywhere.after_commit(&block) }
 
   class << self
     attr_reader :default_config
@@ -41,6 +41,7 @@ module Operations
 
   configure(
     error_reporter: DEFAULT_ERROR_REPORTER,
-    transaction: DEFAULT_TRANSACTION
+    transaction: DEFAULT_TRANSACTION,
+    after_commit: DEFAULT_AFTER_COMMIT
   )
 end

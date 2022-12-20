@@ -171,6 +171,7 @@ class Operations::Command
   option :error_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
     default: proc { Operations.default_config.error_reporter }
   option :transaction, Operations::Types.Interface(:call), default: proc { Operations.default_config.transaction }
+  option :after_commit, Operations::Types.Interface(:call), default: proc { Operations.default_config.after_commit }
 
   # A short-cut to initialize operation by convention:
   #
@@ -325,8 +326,7 @@ class Operations::Command
       component_kwargs = {
         message_resolver: contract.message_resolver,
         info_reporter: info_reporter,
-        error_reporter: error_reporter,
-        transaction: transaction
+        error_reporter: error_reporter
       }
       callable = send(identifier)
 
@@ -335,7 +335,8 @@ class Operations::Command
         ::Operations::Components::Callback.new(
           callable,
           **component_kwargs,
-          callback_type: identifier
+          callback_type: identifier,
+          after_commit: after_commit
         )
       else
         "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
