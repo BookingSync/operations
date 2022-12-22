@@ -41,7 +41,7 @@ RSpec.describe Operations::Components::Idempotency do
             result: {
               command: nil,
               component: :idempotency,
-              context: { additional: ":value", subject: "42" },
+              context: { subject: "Integer", additional: "Symbol" },
               errors: {},
               on_failure: [],
               on_success: [],

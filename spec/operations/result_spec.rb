@@ -255,7 +255,7 @@ RSpec.describe Operations::Result do
         component: :contract,
         command: command_json,
         params: { id: 123, name: "Jon", lastname: "Snow" },
-        context: { record: "TraceableObject#1", object: '#<struct AnonymousObject name="Some name">' },
+        context: { record: "TraceableObject#1", object: "AnonymousObject" },
         on_success: match([
           { "value" => { "Entity" => "Model#1" } },
           include("trace", "value" => { "additional" => "value" })
