@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "pp"
 require "dry-monads"
 require "dry/monads/do"
 require "dry-validation"

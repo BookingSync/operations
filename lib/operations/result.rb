@@ -113,7 +113,7 @@ class Operations::Result
 
   def context_as_json
     context.transform_values do |context_value|
-      next context_value.class.name unless context_value.respond_to?(:id)
+      next context_value.inspect unless context_value.respond_to?(:id)
 
       [context_value.class.name, context_value.id].join("#")
     end

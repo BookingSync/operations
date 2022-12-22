@@ -34,7 +34,21 @@ RSpec.describe Operations::Components::Idempotency do
               errors: be_empty
             )
           )
-        expect(info_reporter).to have_received(:call)
+        expect(info_reporter).to have_received(:call).with(
+          "Idempotency check failed",
+          {
+            failed_check: %r{#<Proc:},
+            result: {
+              command: nil,
+              component: :idempotency,
+              context: { additional: ":value", subject: "42" },
+              errors: {},
+              on_failure: [],
+              on_success: [],
+              params: { name: "Batman" }
+            }
+          }
+        )
       end
     end
 
