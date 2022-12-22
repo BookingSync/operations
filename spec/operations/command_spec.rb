@@ -388,6 +388,37 @@ RSpec.describe Operations::Command do
           )
       end
 
+      context "when on_success callback failed but there is a wrapping transaction" do
+        let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
+        let(:command_options) { { error_reporter: error_reporter } }
+        let(:error_reporter) { proc {} }
+
+        before { allow(error_reporter).to receive(:call) }
+
+        it "returns a normalized operation result" do
+          ActiveRecord::Base.transaction do
+            expect { call }.to change { User.count }.by(1)
+            expect(call)
+              .to be_success
+              .and have_attributes(
+                operation: command,
+                component: :operation,
+                params: { name: "Batman" },
+                context: { admin: true, error: nil, additional: :value },
+                on_success: [],
+                on_failure: [],
+                errors: be_empty
+              )
+            expect(error_reporter).not_to have_received(:call)
+          end
+
+          expect(error_reporter).to have_received(:call).with(
+            "Operation on_success side-effects went sideways",
+            include(:result)
+          )
+        end
+      end
+
       context "when on_success callback failed" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
         let(:command_options) { { error_reporter: error_reporter } }

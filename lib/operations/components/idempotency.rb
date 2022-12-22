@@ -63,8 +63,8 @@ class Operations::Components::Idempotency < Operations::Components::Prechecks
   def report_failure(result, failed_check)
     info_reporter&.call(
       "Idempotency check failed",
-      result: result.pretty_inspect,
-      failed_check: failed_check.pretty_inspect
+      result: result.as_json,
+      failed_check: failed_check.inspect
     )
   end
 end

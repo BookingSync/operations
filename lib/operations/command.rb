@@ -6,7 +6,8 @@ require "operations/components/policies"
 require "operations/components/preconditions"
 require "operations/components/idempotency"
 require "operations/components/operation"
-require "operations/components/callback"
+require "operations/components/on_success"
+require "operations/components/on_failure"
 # This is an entry point interface for every operation in
 # the operations layer. Every operation instance consists of 4
 # components: contract, policy, preconditions and operation
@@ -205,7 +206,7 @@ class Operations::Command
     result_policies = policies_sum - [UNDEFINED] unless policies_sum == [UNDEFINED, UNDEFINED]
     options[:policies] = result_policies if result_policies
 
-    preconditions.concat([precondition]) if precondition.present?
+    preconditions.push(precondition) if precondition.present?
     super(operation, preconditions: preconditions, on_success: after, **options)
   end
 
@@ -328,42 +329,33 @@ class Operations::Command
         info_reporter: info_reporter,
         error_reporter: error_reporter
       }
+      component_kwargs[:after_commit] = after_commit if identifier == :on_success
       callable = send(identifier)
 
-      case identifier
-      when :on_success, :on_failure
-        ::Operations::Components::Callback.new(
-          callable,
-          **component_kwargs,
-          callback_type: identifier,
-          after_commit: after_commit
-        )
-      else
-        "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
-          callable,
-          **component_kwargs
-        )
-      end
+      "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
+        callable,
+        **component_kwargs
+      )
     end
   end
 
   def call_monad(params, context)
-    operation_result = execute_operation(params, context)
+    operation_result = unwrap_monad(execute_operation(params, context))
+
+    return operation_result unless operation_result.component == :operation
 
     if operation_result.success?
-      component(:on_success).call(operation_result.params, operation_result.context)
-    else
-      unwrapped_operation_result = unwrap_monad(operation_result)
-      yield operation_result unless unwrapped_operation_result.component == :operation
-
-      on_failure_result = component(:on_failure).call(
-        unwrapped_operation_result.params,
-        unwrapped_operation_result.context.merge(
-          operation_failure: unwrapped_operation_result.errors.to_h
-        )
+      component(:on_success).call(
+        operation_result.params,
+        operation_result.context,
+        component: operation_result.component
       )
-      unwrapped_operation_result.merge(
-        on_failure: on_failure_result.on_failure
+    else
+      component(:on_failure).call(
+        operation_result.params,
+        operation_result.context,
+        component: operation_result.component,
+        errors: operation_result.errors
       )
     end
   end
