@@ -2,40 +2,40 @@
 
 ## A bit of theory
 
-### What is operation
+### What is an operation
 
-First of all, let's define an application as an combination of domain logic and application state. Domain logic can either read and return the parts of the application state to the consumer (Query) or can modify the application state (Command).
+First of all, let's define an application as a combination of domain logic and application state. Domain logic can either read and return the parts of the application state to the consumer (Query) or can modify the application state (Command).
 
 **Note:** There is a concept that is called Command Query Separation (SQS) or Command Query Responsibility Segregation (CQRS) and which can be used at any level of the implementation (classes in OOP, API) but the general idea is simply not to mix these two up.
 
 While Query is a simple concept (just fetch data from the application state and render it to the consumer in the requested form), Command implementation can have a lot of caveats.
 
-_Command_ or _business operation_ or _interaction_ or _use case_ or _application service_ (DDD term) even just _service_ (this term is so abigous) is a predefined sequience of programmed actions that can be called by a user (directly in the code or via the API) and modifies the application state. In the scope of this framework we prefer the _operation_ term though.
+_Command_ or _business operation_ or _interaction_ or _use case_ or _application service_ (DDD term) even just _service_ (this term is so ambiguous) is a predefined sequence of programmed actions that can be called by a user (directly in the code or via the API) and modifies the application state. In the scope of this framework, we prefer the _operation_ term though.
 
-These modifications are atomic in a sense that the application state supposed to be consistent and valid after the operation execution. It might be eventually consistent but the idea is that the application state is valid after the operation execution and in normal case there should be no need to call a complimentary operation to make the state valid.
+These modifications are atomic in the sense that the application state is supposed to be consistent and valid after the operation execution. It might be eventually consistent but the idea is that the application state is valid after the operation execution and in a normal case, there should be no need to call a complimentary operation to make the state valid.
 
-Operations can also create different side-effects such as: sending an email message, make asyncronious API calls (shoot-and-forget), push events to an event bus, etc.
+Operations can also create different side effects such as: sending an email message, making asynchronous API calls (shoot-and-forget), pushing events to an event bus, etc.
 
-**Note:** An important note is that in contrary to pure DDD approach considers aggregate as transactional boundary but in this framework - the operation itself is wrapped inside of a transaction, though it is configurable.
+**Note:** An important note is that contrary to the pure DDD approach considers aggregate as a transactional boundary but in this framework - the operation itself is wrapped inside of a transaction, though it is configurable.
 
-The bottom line here is: any modifications to the application state, whether it is done via controller or sidekiq job or even console, should happen in operations. Operation is the only entry point to the domain modification.
+The bottom line here is: any modifications to the application state, whether it is done via controller or Sidekiq job, or even console should happen in operations. Operation is the only entry point to the domain modification.
 
 ### The Rails way
 
-In classic Rails application the role of business operations is usually played by ActiveRecord models. When a single model implements multiple use cases, it creates a messy noodles of code that are trying to incorporate all the possible paths of execution. This leads to a lot of not funny things including consitional callbacks and virtual attributes on models. Simply put, this way violates the SRP principle and the consequences are predictable.
+In a classic Rails application, the role of business operations is usually played by ActiveRecord models. When a single model implements multiple use cases, it creates messy noodles of code that are trying to incorporate all the possible paths of execution. This leads to a lot of not funny things including conditional callbacks and virtual attributes on models. Simply put, this way violates the SRP principle and the consequences are predictable.
 
-Each operation in turn contains a single execution routine, a single sequience of programm calls that is easy to read and modify.
+Each operation in turn contains a single execution routine, a single sequence of program calls that is easy to read and modify.
 
-This approach might look more fragile in a sense that ActiveRecord big ball of mud might look like a centralized logic storage and if we will not use use it, we might miss important parts of domain logic and produce invalid application state (e.g. after each update an associated record in the DB supposed to be updated somehow). This might be the case indeed but it can re easily solved by using a tiny bit of determination. The benefits of the operations approach easily overweight this potential issue.
+This approach might look more fragile in the sense that ActiveRecord big ball of mud that might look like centralized logic storage and if we will not use it, we might miss important parts of domain logic and produce an invalid application state (e.g. after each update an associated record in the DB supposed to be updated somehow). This might be the case indeed but it can be easily solved by using a tiny bit of determination. The benefits of the operations approach easily overweight this potential issue.
 
 ### Operations prerequisites
 
-Operations supposed to be the first-class citizens of an application. This means that ideally application state supposed to be modified using operations exclusively. There a some exceptions though:
+Operations are supposed to be the first-class citizens of an application. This means that ideally application state is supposed to be modified using operations exclusively. There are some exceptions though:
 
-* In tests, sometimes it is faster and simpler to create application state using direct storage calls (factories) since the desired state might be a result of a multiple operations' calls which can be ommited for the sake of performance.
-* When the running application state is inconsistent of invalid, there might not be an appropriate operation implemented to fix the state. So we have to use direct storage modifications.
+* In tests, sometimes it is faster and simpler to create an application state using direct storage calls (factories) since the desired state might be a result of multiple operations' calls which can be omitted for the sake of performance.
+* When the running application state is inconsistent or invalid, there might not be an appropriate operation implemented to fix the state. So we have to use direct storage modifications.
 
-**NOTE:** When there is no appropriate operation exist but application state is valid, it is better to create one, especially if the requested state modification needs to happen more than 1 time.
+**NOTE:** When there is no appropriate operation exist but the application state is valid, it is better to create one, especially if the requested state modification needs to happen more than 1 time.
 
 ### Alternatives
 
@@ -77,7 +77,7 @@ create_user = Operations::Command.new(
 create_user.call({ email: "user@gmail.com" })
 ```
 
-Where the operation body are implemented as:
+Where the operation body is implemented as:
 
 ```ruby
 class User::Create
@@ -106,7 +106,7 @@ end
 
 Where `Operations::Contract` is actually a [Dry::Validation::Contract](https://dry-rb.org/gems/dry-validation/) with tiny additions.
 
-Everything in the framework is built with composition over inheritance approach in mind. An instance of `Operations::Command` essentially runs a pipeline through the steps passed into the initializer. In this particular case, the passed parameters will be validated by the contract and if everything is good, will be passed into the operation body.
+Everything in the framework is built with the composition over inheritance approach in mind. An instance of `Operations::Command` essentially runs a pipeline through the steps passed into the initializer. In this particular case, the passed parameters will be validated by the contract and if everything is good, will be passed into the operation body.
 
 **Important:** the whole operation pipeline (except [callbacks](#callbacks-on-success-on-failure)) is wrapped within a transaction by default. This behavior can be adjusted by changing `Operations::Configuration#transaction` (see [Configuration](#configuration) section).
 
@@ -135,13 +135,13 @@ There are several useful methods on `Operations::Result`:
 
 * `success?`, `failure?` - checks for errors presence.
 * `errors(full: true)` - this is not only an attribute but also a method accepting additional params just like `Dry::Validation::Contract#errors` does.
-* `failed_policy?`, `failed_precondition?`, `failed_precheck?` - checks whether operation failed on policy, precondition or any of them respectively. It is possible to check for exact error codes as well.
+* `failed_policy?`, `failed_precondition?`, `failed_precheck?` - checks whether the operation failed on policy, precondition, or any of them respectively. It is possible to check for exact error codes as well.
 
 ### Params and context
 
 Every operation input consists of 2 components: params and context. Params is a hash and it is passed as a hash argument while context is passed as kwargs.
 
-Params is used to pass user input. It will be coerced by the contract implementation and will contain only simple types like strings or integers.
+Params are used to pass user input. It will be coerced by the contract implementation and will contain only simple types like strings or integers.
 Context should never contain any user input and used to pass contextual data like current_user or, say, ActiveRecord models that were fetched from DB before the operation call.
 
 ```ruby
@@ -164,7 +164,7 @@ A rule of thumb: context conveys all the data you don't want to be passed by the
 
 ### Contract
 
-Besides params coercion, contract is responsible for filling in additional context. In Dry::Validation, rules are used to perform this:
+Besides params coercion, a contract is responsible for filling in additional context. In Dry::Validation, rules are used to perform this:
 
 ```ruby
 class Post::UpdateContract < Operations::Contract
@@ -179,7 +179,7 @@ class Post::UpdateContract < Operations::Contract
 end
 ```
 
-Then operation body is able to proceed with the found post handling:
+Then, the operation body can proceed with the found post handling:
 
 ```ruby
 class Post::Update
@@ -216,14 +216,14 @@ end
 
 **Important:** Please check [#generic-preconditions-and-policies](Generic preconditions and policies) on reasons why we don't assign nil post to the context.
 
-Now notice that `post_id` param became optional and `required` validation is handled by the rule conditionally. This allows to pass either param or a post instance itself if it exists:
+Now notice that `post_id` param became optional and `required` validation is handled by the rule conditionally. This allows passing either param or a post instance itself if it exists:
 
 ```ruby
 post_update.call({ post_id: 123 })
 post_update.call({}, post: post)
 ```
 
-Both of the calls above are going to work exactly alike but in the first case there will be additional database query.
+Both of the calls above are going to work exactly alike but in the first case, there will be an additional database query.
 
 It is possible to extract context filling into some kind of generic macro:
 
@@ -256,19 +256,19 @@ class Post::UpdateContract < OperationContract
 end
 ```
 
-**Important:** contract is solely responsible for populating operation context from given params. At the same time it should be flexible enough to accept passed context for optimization purposes.
+**Important:** contract is solely responsible for populating operation context from given params. At the same time, it should be flexible enough to accept the passed context for optimization purposes.
 
 ### Operation body
 
-Operation body can be any callable object (respond to `call` method), even a lambda. But it is always better to define it as a class since there might be additional instance methods and [dependency injections](#dependency-injection).
+The operation body can be any callable object (respond to the `call` method), even a lambda. But it is always better to define it as a class since there might be additional instance methods and [dependency injections](#dependency-injection).
 
-In any event, the operation body should return a Dry::Monad::Result instance. In case of a Failure, it will be converted into an `Operation::Result#error` and in case of Success its content will be merged into the operation context.
+In any event, the operation body should return a Dry::Monad::Result instance. In case of a Failure, it will be converted into an `Operation::Result#error` and in case of Success(), its content will be merged into the operation context.
 
-**Important:** since the Success result payload is merged insite of a context, it is supposed to be a hash.
+**Important:** since the Success result payload is merged inside of a context, it is supposed to be a hash.
 
 ### Application container
 
-Operations are built using the principle: initializers are for [dependencies](#dependency-injection). This means that Commant instance supposed to be initialized once for the application lifetime and is a perfect candidate for some kind of application container to be stored in.
+Operations are built using the principle: initializers are for [dependencies](#dependency-injection). This means that the Command instance is supposed to be initialized once for the application lifetime and is a perfect candidate for some kind of application container to be stored in.
 
 But if your application does not have an application container - the best approach would be to use class methods to store Command instances.
 
@@ -303,7 +303,7 @@ end
 
 ### Dependency Injection
 
-Dependency injection can be used to provide IO clients into the operation. It could be DB repositories or API clients. The best way is to use Dry::Initializer for it since it provides an ability to define acceptable types.
+Dependency injection can be used to provide IO clients with the operation. It could be DB repositories or API clients. The best way is to use Dry::Initializer for it since it provides the ability to define acceptable types.
 
 If you still prefer to use ActiveRecord, it is worth creating a wrapper around it providing Dry::Monad-compatible interfaces.
 
@@ -349,9 +349,9 @@ class Post::Create
 end
 ```
 
-`ActiveRecordRepository#create` returns a proper Success() monad which will become a part of `Operation::Result#context` returned by Composite or a properly built Failure() monad wich will be incorporated into `Operation::Result#errors`.
+`ActiveRecordRepository#create` returns a proper Success() monad which will become a part of `Operation::Result#context` returned by Composite or a properly built Failure() monad which will be incorporated into `Operation::Result#errors`.
 
-Of course, it is possible to use [dry-auto_inject](https://dry-rb.org/gems/dry-auto_inject/) along with [dry-container](https://dry-rb.org/gems/dry-container/) to make things even more fancy.
+Of course, it is possible to use [dry-auto_inject](https://dry-rb.org/gems/dry-auto_inject/) along with [dry-container](https://dry-rb.org/gems/dry-container/) to make things even fancier.
 
 ### Configuration
 
@@ -369,13 +369,13 @@ But also, a configuration instance can be passed directly to a Command initializ
 Operations::Command.new(..., configuration: Operations.default_config.new(transaction: -> {}))
 ```
 
-It is possible to call `configuration_instance.new` in order to receive an updated configuration instance since it is a `Dry::Struct`
+It is possible to call `configuration_instance.new` to receive an updated configuration instance since it is a `Dry::Struct`
 
 ### Preconditions
 
-When we need to check against application state, preconditions are coming to help. Obviously we can do all those checks in Contract rule definitions but it is great to have a separate kind of components (a separate stage in the pipeline) for this particular reason as it gives an ability to check them in isolation.
+When we need to check against the application state, preconditions are coming to help. Obviously, we can do all those checks in Contract rule definitions but it is great to have separate kinds of components (a separate stage in the pipeline) for this particular reason as it gives the ability to check them in isolation.
 
-There are many potential scenarios when it can be handy. For example, we might need to render a button only when subject entity satisfies preconditions for a particular operation. Or we want to return a list of possible operations from an API we have.
+There are many potential scenarios when it can be handy. For example, we might need to render a button only when the subject entity satisfies preconditions for a particular operation. Or we want to return a list of possible operations from an API we have.
 
 **Important:** a rule of thumb here is that preconditions don't depend on the user input, they only check the existing state of the application and they are supposed to access only the operation context for this purpose, not params.
 
@@ -416,7 +416,7 @@ class Post::Publish::NotPublishedPrecondition
 end
 ```
 
-Precondition is supposed to return either a Success() monad if operation is ok to proceed with the updates or `Failure(:error_symbol)` if we want to interrupt the operation execution.
+Precondition is supposed to return either a Success() monad if an operation is ok to proceed with the updates or `Failure(:error_symbol)` if we want to interrupt the operation execution.
 
 Besides just a symbol, it is possible to return a Failure with a hash:
 
@@ -454,7 +454,7 @@ result.failed_precondition?(:another_code) #=> false
 result.failed_precheck?(:another_code) #=> false
 ```
 
-Alternatively, it is possible to return either just a error_symbol or `nil` from precondition where nil is interpreted as a lack of error. In this case, precondition becomes a bit less bulky:
+Alternatively, it is possible to return either just an error_symbol or `nil` from the precondition where nil is interpreted as a lack of error. In this case, the precondition becomes a bit less bulky:
 
 ```ruby
 class Post::Publish::NotPublishedPrecondition
@@ -464,11 +464,11 @@ class Post::Publish::NotPublishedPrecondition
 end
 ```
 
-It is up to the developer which notion to use but we definitely recommend a uniform application-wide approach to be established.
+It is up to the developer which notion to use but we recommend a uniform application-wide approach to be established.
 
-In order to resolve an error message from error code, the contract's MessageResolver is used. So the rules are exactly the same as for the failures returned by `Operations::Contract`.
+To resolve an error message from an error code, the contract's MessageResolver is used. So the rules are the same as for the failures returned by `Operations::Contract`.
 
-It is possible to pass multiple preconditions. They will be evaluated all at once and if even one of them fails - operation fails as well.
+It is possible to pass multiple preconditions. They will be evaluated all at once and if even one of them fails - the operation fails as well.
 
 ```ruby
 class Post::Publish
@@ -500,20 +500,20 @@ Now we want to render a button in the interface:
 <% end %>
 ```
 
-In this case you may notice that the post was found before in the controller action and since we have a smart finder rule in the contract, operation is not going to need `post_id` param and will utilize the given `@post` instance.
+In this case, you may notice that the post was found before in the controller action and since we have a smart finder rule in the contract, the operation is not going to need `post_id` param and will utilize the given `@post` instance.
 
 There are 4 methods to be used for such checks:
 
-* `possible(**context)` - returns an operation result (success or failure depending on precondition checks result). Useful when you need to check the exact error happened.
-* `possible?(**context)` - the same as the previous one but returns boolean result.
+* `possible(**context)` - returns an operation result (success or failure depending on precondition checks result). Useful when you need to check the exact error that happened.
+* `possible?(**context)` - the same as the previous one but returns a boolean result.
 * `callable(**context)` - checks for both preconditions and [policies](#policies).
-* `callable?(**context)` - the same as the previous one but returns boolean result.
+* `callable?(**context)` - the same as the previous one but returns a boolean result.
 
 `callable/callable?` will be the method used in 99% of cases, there are very few situations when one needs to check preconditions separately from policies.
 
 ### Policies
 
-Now we need to check if the current actor is able to perform the operation. Policies are utilized for this purpose:
+Now we need to check if the current actor can perform the operation. Policies are utilized for this purpose:
 
 ```ruby
 class Post::Publish
@@ -539,11 +539,11 @@ class Post::Publish::AuthorPolicy
 end
 ```
 
-The difference between policies and preconditions is simple: policies generally involve current actor checks agains the rest of the context while preconditions check the rest of the context without the actor involvement. Both should be agnostic of user input.
+The difference between policies and preconditions is simple: policies generally involve current actor checks against the rest of the context while preconditions check the rest of the context without the actor's involvement. Both should be agnostic of user input.
 
-Policies are separate from preconditions because in we usually treat the results of those checks differently. For example, if operation fails on preconditions we might want to render a disabled button with an error message as a hint but if policy fails - we don't render the button at all.
+Policies are separate from preconditions because in we usually treat the results of those checks differently. For example, if an operation fails on preconditions we might want to render a disabled button with an error message as a hint but if the policy fails - we don't render the button at all.
 
-Similarly to preconditions, policies are having 2 returned values signatures: `true/false` and `Success()/Failure(:error_code)`. In case of `false`, an `:unauthorized` error code will be returned as a result. It is possible to return any error code using `Failure` monad.
+Similarly to preconditions, policies are having 2 returned values signatures: `true/false` and `Success()/Failure(:error_code)`. In case of `false`, an `:unauthorized` error code will be returned as a result. It is possible to return any error code using the `Failure` monad.
 
 ```ruby
 class Post::Publish::AuthorPolicy
@@ -555,12 +555,12 @@ class Post::Publish::AuthorPolicy
 end
 ```
 
-It is possible to pass multiple policies, all of them have to succeed similarly to preconditions. Though it is impossible not to pass any policies for security resons. If operation is internal to the system and not exposed to the end user, `policy: nil` should be passed to `Operations::Command` instance any way just to explicitly specify that this operation doesn't have any policy.
+It is possible to pass multiple policies, and all of them have to succeed similarly to preconditions. Though it is impossible not to pass any policies for security reasons. If an operation is internal to the system and not exposed to the end user, `policy: nil` should be passed to `Operations::Command` instance anyway just to explicitly specify that this operation doesn't have any policy.
 
 There are 2 more methods to check for policies separately:
 
-* `allowed(**context)` - returns an operation result (success or failure depending on policy checks result). Useful when you need to check the exact error happened.
-* `allowed?(**context)` - the same as the previous one but returns boolean result.
+* `allowed(**context)` - returns an operation result (success or failure depending on policy checks result). Useful when you need to check the exact error that happened.
+* `allowed?(**context)` - the same as the previous one but returns a boolean result.
 
 ### ActiveRecord scopes usage
 
@@ -592,7 +592,7 @@ Please avoid this at all costs since:
 2. We want to return an explicit `unauthorized/not_publishable` error to the user instead of a cryptic `not_found`.
 3. It does not fit the concept of repositories.
 
-If we want to use security through obscurity in the controller later - we can easily turn particular operation error into an `ActiveRecord::RecordNotFound` exception at will.
+If we want to use security through obscurity in the controller later - we can easily turn a particular operation error into an `ActiveRecord::RecordNotFound` exception at will.
 
 There could be non-domain but rather technical scopes like soft deletion used as an exception but this is a rare case and it should be carefully considered.
 
@@ -606,13 +606,13 @@ Normally we would expect the following execution order of the operation:
 4. Validate user input
 5. Call operation if everything is valid
 
-This order is expected because it doesn't even make sense to validate user input if the state of the system or the current actor don't fit the requirements for the operation to be performed. This is also useful since we want to check if operation is callable in some instances but we don't have user input in this point (e.g. on operation button rendering).
+This order is expected because it doesn't even make sense to validate user input if the state of the system or the current actor doesn't fit the requirements for the operation to be performed. This is also useful since we want to check if an operation is callable in some instances but we don't have user input at this point (e.g. on operation button rendering).
 
-Unfortunately, in order to set the context, we need some of the user input (like `post_id`) to be validated. Separating context-filling params from the rest of them would cause 2 different contracts and other unplesant or even ugly solutions. So in order to keep a single contract, the decision was to implement the following algorithm:
+Unfortunately, to set the context, we need some of the user input (like `post_id`) to be validated. Separating context-filling params from the rest of them would cause 2 different contracts and other unpleasant or even ugly solutions. So to keep a single contract, the decision was to implement the following algorithm:
 
-1. Validate user input in contract
+1. Validate user input in the contract
 2. Try to set context if possible in contract rules
-3. If contract fails, don't return failure just yet
+3. If the contract fails, don't return failure just yet
 4. Check policies if we have all the required context set
 5. Check preconditions if we have all the required context set
 6. Return contract error if it was impossible to check preconditions/policies or they have passed
@@ -620,7 +620,7 @@ Unfortunately, in order to set the context, we need some of the user input (like
 
 This way we don't have to separate user input validation but the results returned will be very close to what the first routine would produce.
 
-Since all the context variables are passed as kwargs to policies/preconditions, it is quite simple to determine is we have all the context required to run those policies/preconditions:
+Since all the context variables are passed as kwargs to policies/preconditions, it is quite simple to determine if we have all the context required to run those policies/preconditions:
 
 ```ruby
 class Comment::Update::NotSoftDeletedPrecondition
@@ -630,7 +630,7 @@ class Comment::Update::NotSoftDeletedPrecondition
 end
 ```
 
-Now we decided that we want this precondition to be applicable to all the models and be universal.
+Now we decided that we want this precondition to apply to all the models and be universal.
 
 ```ruby
 class Preconditions::NotSoftDeleted
@@ -655,7 +655,7 @@ class Comment::Update
 end
 ```
 
-In this example, we pass context key to check in the precondition initializer. And the algorithm that checks for the filled context is now unable to determine required kwargs since there are no kwargs.
+In this example, we pass the context key to check in the precondition initializer. And the algorithm that checks for the filled context is now unable to determine the required kwargs since there are no kwargs.
 
 Fortunately, `context_key` or `context_keys` are magic parameter names that are also considered by this algorithm along with kwargs, so this example will do the trick and these magic variables are making generic policies/preconditions possible to define.
 
@@ -681,7 +681,7 @@ class Comment::Update
 end
 ```
 
-In the examples above we safely assume that context key is present in case when contract and context population is implemented the following way:
+In the examples above we safely assume that the context key is present in the case when the contract and context population is implemented the following way:
 
 ```ruby
 class Comment::Update::Contract < OperationContract
@@ -693,17 +693,17 @@ class Comment::Update::Contract < OperationContract
 end
 ```
 
-The context key is not even set if the object was not found. In this case the context will be considered insufficient and operation policies/preconditions will not be even called accordingly to the algorithm described above.
+The context key is not even set if the object was not found. In this case, the context will be considered insufficient and operation policies/preconditions will not be even called accordingly to the algorithm described above.
 
 ### Callbacks (on_success, on_failure)
 
-Sometimes we need to run further application state modification outside of the operation transaction. For this purpose, there are 2 separate callbacks: `on_success` and `on_failure`.
+Sometimes we need to run further application state modifications outside of the operation transaction. For this purpose, there are 2 separate callbacks: `on_success` and `on_failure`.
 
-The key difference besides one runs after operation success and another - after failure, is that `on_success` runs after transaction commit. This means that is one operation calls another operation inside of it and the innned one has `on_success` callbacks defined - the callbacks are going to be executed only after the outermost transaction is committed successfully.
+The key difference besides one running after operation success and another - after failure, is that `on_success` runs after the transaction commit. This means that if one operation calls another operation inside of it and the inner one has `on_success` callbacks defined - the callbacks are going to be executed only after the outermost transaction is committed successfully.
 
-In order to achieve this, framework utilizes [after_commit_everywhere](https://github.com/Envek/after_commit_everywhere) gem and the behavior is configurable using `Operations::Configuration#after_commit` option.
+To achieve this, the framework utilizes the [after_commit_everywhere](https://github.com/Envek/after_commit_everywhere) gem and the behavior is configurable using `Operations::Configuration#after_commit` option.
 
-It is a good idea to use these callbacks to schedule some jobs instead of just running inline code since if callback execution fails - the failure will be ignored and operation is still going to be successfull. Though the failure from both callbacks will be reported using `Operations::Configuration#error_reporter` and uses Sentry by default.
+It is a good idea to use these callbacks to schedule some jobs instead of just running inline code since if callback execution fails - the failure will be ignored and the operation is still going to be successful. Though the failure from both callbacks will be reported using `Operations::Configuration#error_reporter` and using Sentry by default.
 
 ```ruby
 class Comment::Update
@@ -735,9 +735,9 @@ Also, `on_failure` callback will receive `operation_failure:` key in the context
 
 ### Idempotency checks
 
-Idempotency checks are used to skip operation in certain conditions. It is very similar to preconditions but if idempotency check fails - the operation will be successful any way. This is useful in cases when we want to ensure that operation is not going to run for the second time even if it was called, and especially for idempotent consumer patern implmenetation in event-driven systems.
+Idempotency checks are used to skip the operation body in certain conditions. It is very similar to preconditions but if the idempotency check fails - the operation will be successful anyway. This is useful in cases when we want to ensure that operation is not going to run for the second time even if it was called, and especially for idempotent consumer pattern implementation in event-driven systems.
 
-Normally, we advice for idempotency checks not to use the same logic which would be used for preconditions, i.e. not to use application business state checks. Instead, it worth implementing a separate mechanism like `ProcessedEvents` DB table.
+Normally, we advise for idempotency checks not to use the same logic which would be used for preconditions, i.e. not to use application business state checks. Instead, it is worth implementing a separate mechanism like `ProcessedEvents` DB table.
 
 Idempotency checks are running after policy checks but before preconditions.
 
@@ -756,7 +756,7 @@ end
 
 class Order::MarkAsCompleted::Contract < OperationContract
   params do
-    # event_id is optional and the operation can be called without it, i.e. from console.
+    # event_id is optional and the operation can be called without it, i.e. from the console.
     optional(:event_id).filled(Types::UUID)
     optional(:order_id).filled(:integer)
   end
@@ -780,7 +780,7 @@ end
 class Idempotency::ProcessedEvents
   include Dry::Monads[:result]
 
-  # Notice that unlike preconditions, idempotency checks has params provided
+  # Notice that, unlike preconditions, idempotency checks have params provided
   def call(params, **)
     return Success() unless params.key?(:event_id)
     # Assume that `ProcessedEvents` has a unique index on `event_id`
@@ -792,9 +792,9 @@ class Idempotency::ProcessedEvents
 end
 ```
 
-**Important:** contrary to the operation, in idempotency checks require to return a hash in Failure monad. This hash will be merged to the result context. This is necessary in order for operations interrupted during idempotency checks to return the same result as at the first run.
+**Important:** contrary to the operation, idempotency checks require to return a hash in Failure monad. This hash will be merged into the resulting context. This is necessary for operations interrupted during idempotency checks to return the same result as at the first run.
 
-It might be also worth defining 2 different operations that will be called in different circumstances in order to reduce human error:
+It might be also worth defining 2 different operations that will be called in different circumstances to reduce human error:
 
 ```ruby
 class Order::MarkAsCompleted
@@ -834,15 +834,15 @@ class Order::MarkAsCompleted::KafkaContract < Order::MarkAsCompleted::SystemCont
 end
 ```
 
-In this case, `Order::MarkAsCompleted.system.call(...)` will be used in, say, console and `Order::MarkAsCompleted.kafka.call(...)` will be used on Kafka event consumption.
+In this case, `Order::MarkAsCompleted.system.call(...)` will be used in, say, console, and `Order::MarkAsCompleted.kafka.call(...)` will be used on Kafka event consumption.
 
 ### Convenience helpers
 
-`Operations::Convenience` is an optional module that contains helpers for simpler operation definition. See module documentation for more details.
+`Operations::Convenience` is an optional module that contains helpers for simpler operation definitions. See module documentation for more details.
 
 ### Form objects
 
-While we normally recommend to use frontend-backend separation, it is still possible to use this framework with Rails view helpers:
+While we normally recommend using frontend-backend separation, it is still possible to use this framework with Rails view helpers:
 
 ```ruby
 class PostsController < ApplicationController
@@ -856,7 +856,7 @@ class PostsController < ApplicationController
   end
 
   def update
-    # With operations we don't need strong parameters as operation contract takes care of this.
+    # With operations we don't need strong parameters as the operation contract takes care of this.
     @post_update = Post::Update.default.call(
       { **params[:post_update_default_form], post_id: params[:id] },
       current_user: current_user
@@ -867,7 +867,7 @@ class PostsController < ApplicationController
 end
 ```
 
-The key here is to use `Operations::Result#form` method for form builder.
+The key here is to use `Operations::Result#form` method for the form builder.
 
 ```erb
 # views/posts/edit.html.erb
@@ -899,9 +899,9 @@ class Post::Update::Hydrator
 end
 ```
 
-General idea here is to figure out attributes we have in the contract (those attributes are also defined automatically in a generated form class) and then fetch those attributes from the model and merge with the params provided within the request.
+The general idea here is to figure out attributes we have in the contract (those attributes are also defined automatically in a generated form class) and then fetch those attributes from the model and merge them with the params provided within the request.
 
-Also, in case of, say, [simple_form](https://github.com/heartcombo/simple_form), we need to provide additional attributes information, like data type. It is possible to do with an optional `form_model_map:` operation option:
+Also, in the case of, say, [simple_form](https://github.com/heartcombo/simple_form), we need to provide additional attributes information, like data type. It is possible to do this with an optional `form_model_map:` operation option:
 
 ```ruby
 class Post::Update
