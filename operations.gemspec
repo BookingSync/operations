@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "activesupport", ">= 5.2.0"
   spec.add_runtime_dependency "after_commit_everywhere"
   spec.add_runtime_dependency "dry-monads"
+  spec.add_runtime_dependency "dry-struct"
   spec.add_runtime_dependency "dry-validation"
   spec.metadata = {
     "rubygems_mfa_required" => "true"

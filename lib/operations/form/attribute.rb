@@ -10,7 +10,9 @@ class Operations::Form::Attribute
   param :name, type: Operations::Types::Coercible::Symbol
   option :collection, type: Operations::Types::Bool, optional: true, default: proc { false }
   option :form, type: Operations::Types::Class, optional: true
-  option :model_name, type: Operations::Types::String, optional: true
+  option :model_name,
+    type: Operations::Types::String | Operations::Types.Instance(Class).constrained(lt: ActiveRecord::Base),
+    optional: true
 
   def model_type
     @model_type ||= owning_model.type_for_attribute(string_name) if model_name
@@ -31,7 +33,7 @@ class Operations::Form::Attribute
   private
 
   def owning_model
-    @owning_model ||= model_name.constantize
+    @owning_model ||= model_name.is_a?(String) ? model_name.constantize : model_name
   end
 
   def string_name

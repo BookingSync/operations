@@ -57,10 +57,10 @@ class Operations::Components::Base
       failure.map { |f| normalize_failure(f) }
     when Hash
       {
-        message: failure[:error],
+        message: failure[:message] || failure[:error],
         tokens: failure[:tokens],
         path: failure[:path],
-        meta: failure.except(:error, :tokens, :path)
+        meta: failure.except(:message, :error, :tokens, :path)
       }
     when String, Symbol
       { message: failure }

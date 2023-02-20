@@ -84,7 +84,15 @@ require "operations/components/on_failure"
 #    retuns a boolean result. Allowed or not. Policy relies mostly on
 #    the initial context but can also use the results of the Contract
 #    rules evaluation.
-# 3. Precondition is checking if the operation is possible to
+# 3. Idempotency check are running after policy and before preconditions and
+#    can return either Success() or Failure({}). In case of Failure, preconditions,
+#    the operation body (and after calls) will be skept but the operation
+#    result will be successful. Failure({}) can carry an additional context
+#    to make sure the operation result context is going to be the same for both
+#    cases of normal operation execution and skipped operation body. The
+#    only sign of the execution interrupted at this stage will be the
+#    value of {Result#component} equal to `:idempotency`.
+# 4. Precondition is checking if the operation is possible to
 #    perform for the current domain state. For example, if
 #    {Booking::Cancel} is possible to execute for a particular booking.
 #    There might be multiple checks, so precondition returns either
@@ -93,14 +101,6 @@ require "operations/components/on_failure"
 #    on the context (either initial or the data loaded by the contract).
 #    Anything that has nothing to do with the user input validation
 #    should be implemented as a precondition.
-# 4. Idempotency check are running after preconditions and can return
-#    either Success() or Failure({}). In case of Failure, the operation
-#    body (and after calls) will be skept but the operation result will
-#    be successful. Failure({}) can carry an additional context to make
-#    sure the operation result context is going to be the same for both
-#    cases of normal operation execution and skipped operation body. The
-#    only sign of the execution interrupted at this stage will be the
-#    value of {Result#component} equal to `:idempotency`.
 # 5. Operation itself implements the routine. It can create or update
 #    enities, send API requiests, send notifications, communicate with
 #    the bus. Anything that should be done as a part of the operation.
@@ -127,7 +127,7 @@ require "operations/components/on_failure"
 class Operations::Command
   UNDEFINED = Object.new.freeze
   EMPTY_HASH = {}.freeze
-  COMPONENTS = %i[contract policies preconditions idempotency operation on_success on_failure].freeze
+  COMPONENTS = %i[contract policies idempotency preconditions operation on_success on_failure].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
 
   include Dry::Monads[:result]
@@ -154,8 +154,8 @@ class Operations::Command
   param :operation, Operations::Types.Interface(:call)
   option :contract, Operations::Types.Interface(:call)
   option :policies, Operations::Types::Array.of(Operations::Types.Interface(:call))
-  option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :idempotency, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
+  option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_success, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_failure, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :form_model_map, Operations::Types::Hash.map(
@@ -167,12 +167,7 @@ class Operations::Command
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
   option :form_class, Operations::Types::Class, default: proc { build_form }
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
-  option :info_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
-    default: proc { Operations.default_config.info_reporter }
-  option :error_reporter, Operations::Types::Nil | Operations::Types.Interface(:call),
-    default: proc { Operations.default_config.error_reporter }
-  option :transaction, Operations::Types.Interface(:call), default: proc { Operations.default_config.transaction }
-  option :after_commit, Operations::Types.Interface(:call), default: proc { Operations.default_config.after_commit }
+  option :configuration, Operations::Configuration, default: proc { Operations.default_config }
 
   # A short-cut to initialize operation by convention:
   #
@@ -293,9 +288,7 @@ class Operations::Command
     {
       **main_components_as_json,
       **form_components_as_json,
-      info_reporter: info_reporter.class.name,
-      error_reporter: error_reporter.class.name,
-      transaction: transaction.class.name
+      configuration: configuration.as_json
     }
   end
 
@@ -306,8 +299,8 @@ class Operations::Command
       operation: operation.class.name,
       contract: contract.class.name,
       policies: policies.map { |policy| policy.class.name },
-      preconditions: preconditions.map { |precondition| precondition.class.name },
       idempotency: idempotency.map { |idempotency_check| idempotency_check.class.name },
+      preconditions: preconditions.map { |precondition| precondition.class.name },
       on_success: on_success.map { |on_success_component| on_success_component.class.name },
       on_failure: on_failure.map { |on_failure_component| on_failure_component.class.name }
     }
@@ -326,10 +319,10 @@ class Operations::Command
     (@components ||= {})[identifier] = begin
       component_kwargs = {
         message_resolver: contract.message_resolver,
-        info_reporter: info_reporter,
-        error_reporter: error_reporter
+        info_reporter: configuration.info_reporter,
+        error_reporter: configuration.error_reporter
       }
-      component_kwargs[:after_commit] = after_commit if identifier == :on_success
+      component_kwargs[:after_commit] = configuration.after_commit if identifier == :on_success
       callable = send(identifier)
 
       "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
@@ -361,11 +354,19 @@ class Operations::Command
   end
 
   def execute_operation(params, context)
-    transaction.call do
+    configuration.transaction.call do
       contract_result = yield validate_monad(params, context, call_idempotency: true)
 
       yield component(:operation).call(contract_result.params, contract_result.context)
     end
+  end
+
+  def validate_monad(params, context, call_idempotency: false)
+    contract_result = component(:contract).call(params, context)
+
+    yield callable_monad(contract_result, call_idempotency: call_idempotency)
+
+    contract_result
   end
 
   def callable_monad(contract_result, call_idempotency: false)
@@ -383,14 +384,6 @@ class Operations::Command
     preconditions_result = yield component(:preconditions).call(contract_result.params, contract_result.context)
 
     idempotency_result || preconditions_result
-  end
-
-  def validate_monad(params, context, call_idempotency: false)
-    contract_result = component(:contract).call(params, context)
-
-    yield callable_monad(contract_result, call_idempotency: call_idempotency)
-
-    contract_result
   end
 
   def operation_result(result)

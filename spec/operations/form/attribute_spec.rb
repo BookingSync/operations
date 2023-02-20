@@ -36,7 +36,7 @@ RSpec.describe Operations::Form::Attribute do
     it { is_expected.to eq [] }
 
     context "with model_name present" do
-      let(:attribute_options) { { model_name: "User" } }
+      let(:attribute_options) { { model_name: User } }
 
       it { is_expected.to eq(User.validators_on(:name)) }
     end
@@ -48,7 +48,7 @@ RSpec.describe Operations::Form::Attribute do
     it { is_expected.to be_nil }
 
     context "with model_name present" do
-      let(:attribute_options) { { model_name: "User" } }
+      let(:attribute_options) { { model_name: User } }
 
       it { is_expected.to eq "name_fr" }
     end
