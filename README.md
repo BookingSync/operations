@@ -16,17 +16,17 @@ These modifications are atomic in the sense that the application state is suppos
 
 Operations can also create different side effects such as: sending an email message, making asynchronous API calls (shoot-and-forget), pushing events to an event bus, etc.
 
-**Note:** An important note is that contrary to the pure DDD approach considers aggregate as a transactional boundary but in this framework - the operation itself is wrapped inside of a transaction, though it is configurable.
+**Note:** An important note is that contrary to the pure DDD approach that considers aggregate a transactional boundary, in this framework - the operation itself is wrapped inside of a transaction, though it is configurable.
 
 The bottom line here is: any modifications to the application state, whether it is done via controller or Sidekiq job, or even console should happen in operations. Operation is the only entry point to the domain modification.
 
 ### The Rails way
 
-In a classic Rails application, the role of business operations is usually played by ActiveRecord models. When a single model implements multiple use cases, it creates messy noodles of code that are trying to incorporate all the possible paths of execution. This leads to a lot of not funny things including conditional callbacks and virtual attributes on models. Simply put, this way violates the SRP principle and the consequences are predictable.
+In a classic Rails application, the role of business operations is usually played by ActiveRecord models. When a single model implements multiple use cases, it creates messy noodles of code that are trying to incorporate all the possible paths of execution. This leads to a lot of not funny things including conditional callbacks and virtual attributes on models. Simply put, this way violates the SRP principle and the consequences are well known.
 
 Each operation in turn contains a single execution routine, a single sequence of program calls that is easy to read and modify.
 
-This approach might look more fragile in the sense that ActiveRecord big ball of mud that might look like centralized logic storage and if we will not use it, we might miss important parts of domain logic and produce an invalid application state (e.g. after each update an associated record in the DB supposed to be updated somehow). This might be the case indeed but it can be easily solved by using a tiny bit of determination. The benefits of the operations approach easily overweight this potential issue.
+This approach might look more fragile in the sense that ActiveRecord big ball of mud that might look like centralized logic storage and if we will not use it, we might miss important parts of domain logic and produce an invalid application state (e.g. after each update an associated record in the DB supposed to be updated somehow). This might be the case indeed but it can be easily solved by using a tiny bit of determination. The benefits of the operations approach easily overweigh this potential issue.
 
 ### Operations prerequisites
 
