@@ -6,7 +6,7 @@
 
 First of all, let's define an application as a combination of domain logic and application state. Domain logic can either read and return the parts of the application state to the consumer (Query) or can modify the application state (Command).
 
-**Note:** There is a concept that is called Command Query Separation (SQS) or Command Query Responsibility Segregation (CQRS) and which can be used at any level of the implementation (classes in OOP, API) but the general idea is simply not to mix these two up.
+**Note:** There is a concept that is called Command Query Separation (CQS) or Command Query Responsibility Segregation (CQRS) and which can be used at any level of the implementation (classes in OOP, API) but the general idea is simply not to mix these two up.
 
 While Query is a simple concept (just fetch data from the application state and render it to the consumer in the requested form), Command implementation can have a lot of caveats.
 
@@ -35,7 +35,7 @@ Operations are supposed to be the first-class citizens of an application. This m
 * In tests, sometimes it is faster and simpler to create an application state using direct storage calls (factories) since the desired state might be a result of multiple operations' calls which can be omitted for the sake of performance.
 * When the running application state is inconsistent or invalid, there might not be an appropriate operation implemented to fix the state. So we have to use direct storage modifications.
 
-**NOTE:** When there is no appropriate operation exist but the application state is valid, it is better to create one, especially if the requested state modification needs to happen more than 1 time.
+**NOTE:** When application state is valid but an appropriate operation does not exist, it is better to create one. Especially if the requested state modification needs to happen more than 1 time.
 
 ### Alternatives
 
@@ -214,7 +214,7 @@ class Post::UpdateContract < Operations::Contract
 end
 ```
 
-**Important:** Please check [#generic-preconditions-and-policies](Generic preconditions and policies) on reasons why we don't assign nil post to the context.
+**Important:** Please check [Generic preconditions and policies](#generic-preconditions-and-policies) on reasons why we don't assign nil post to the context.
 
 Now notice that `post_id` param became optional and `required` validation is handled by the rule conditionally. This allows passing either param or a post instance itself if it exists:
 
@@ -479,13 +479,13 @@ class Post::Publish
       policy: nil,
       preconditions: [
         NotPublishedPrecondition.new,
-        ApprovedPreconfdition.new
+        ApprovedPrecondition.new
       ]
     )
   end
 end
 
-class Post::Publish::ApprovedPreconfdition
+class Post::Publish::ApprovedPrecondition
   def call(post:, **)
     :not_approved_yet unless post.approved?
   end
@@ -625,7 +625,7 @@ Since all the context variables are passed as kwargs to policies/preconditions, 
 ```ruby
 class Comment::Update::NotSoftDeletedPrecondition
   def call(comment:, **)
-    :soft_deleted if post.deleted_at?
+    :soft_deleted if comment.deleted_at?
   end
 end
 ```
@@ -666,7 +666,7 @@ class Policies::BelongsToUser
   param :context_key, Types::Symbol
 
   def call(current_user: **context)
-    context[context_key].user = current_user
+    context[context_key].user == current_user
   end
 end
 
