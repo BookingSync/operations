@@ -1,17 +1,15 @@
 # frozen_string_literal: true
 
+require "dry-struct"
+
 # The framework's configuration shared between all the commands.
 #
 # @see Operations.default_config
-class Operations::Configuration
-  extend Dry::Initializer
+class Operations::Configuration < Dry::Struct
+  schema schema.strict
 
-  option :info_reporter, Operations::Types.Interface(:call), optional: true
-  option :error_reporter, Operations::Types.Interface(:call), optional: true
-  option :transaction, Operations::Types.Interface(:call)
-  option :after_commit, Operations::Types.Interface(:call)
-
-  def to_h
-    self.class.dry_initializer.attributes(self)
-  end
+  attribute :info_reporter?, Operations::Types.Interface(:call).optional
+  attribute :error_reporter?, Operations::Types.Interface(:call).optional
+  attribute :transaction, Operations::Types.Interface(:call)
+  attribute :after_commit, Operations::Types.Interface(:call)
 end

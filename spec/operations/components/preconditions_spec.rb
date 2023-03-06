@@ -38,7 +38,7 @@ RSpec.describe Operations::Components::Preconditions do
     context "with multiple preconditions" do
       let(:preconditions) do
         [
-          ->(**) { [:failure1, "failure2"] },
+          ->(**) { [:failure1, { message: "failure2", path: [:name] }, "failure3"] },
           ->(**) { { error: "Falure", foo: 42 } },
           ->(**) {}
         ]
@@ -53,26 +53,35 @@ RSpec.describe Operations::Components::Preconditions do
             context: { subject: 42 },
             on_success: [],
             errors: have_attributes(
-              to_h: { nil => [
-                { text: "Failure 1", code: :failure1 },
-                "failure2",
-                { text: "Falure", foo: 42 }
-              ] }
+              to_h: {
+                nil => [
+                  { text: "Failure 1", code: :failure1 },
+                  "failure3",
+                  { text: "Falure", foo: 42 }
+                ],
+                name: ["failure2"]
+              }
             )
           )
       end
 
       it "returns full and localized messages" do
-        expect(call.errors(full: true).to_h).to eq(nil => [
-          { text: "Failure 1", code: :failure1 },
-          "failure2",
-          { text: "Falure", foo: 42 }
-        ])
-        expect(call.errors(locale: :fr).to_h).to eq(nil => [
-          { text: "Échec 1", code: :failure1 },
-          "failure2",
-          { text: "Falure", foo: 42 }
-        ])
+        expect(call.errors(full: true).to_h).to eq(
+          nil => [
+            { text: "Failure 1", code: :failure1 },
+            "failure3",
+            { text: "Falure", foo: 42 }
+          ],
+          name: ["name failure2"]
+        )
+        expect(call.errors(locale: :fr).to_h).to eq(
+          nil => [
+            { text: "Échec 1", code: :failure1 },
+            "failure3",
+            { text: "Falure", foo: 42 }
+          ],
+          name: ["failure2"]
+        )
       end
     end
 

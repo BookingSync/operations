@@ -43,24 +43,24 @@ class Operations::Result
 
   # Checks if ANY of the passed precondition or policy codes have failed
   # If nothing is passed - checks that ANY precondition or policy have failed
-  def failed_precheck?(*names)
+  def failed_precheck?(*error_codes)
     failure? &&
       %i[policies preconditions].include?(component) &&
-      (names.blank? || errors_with_code?(*names))
+      (error_codes.blank? || errors_with_code?(*error_codes))
   end
   alias_method :failed_prechecks?, :failed_precheck?
 
   # Checks if ANY of the passed policy codes have failed
   # If nothing is passed - checks that ANY policy have failed
-  def failed_policy?(*names)
-    component == :policies && failed_precheck?(*names)
+  def failed_policy?(*error_codes)
+    component == :policies && failed_precheck?(*error_codes)
   end
   alias_method :failed_policies?, :failed_policy?
 
   # Checks if ANY of the passed precondition codes have failed
   # If nothing is passed - checks that ANY precondition have failed
-  def failed_precondition?(*names)
-    component == :preconditions && failed_precheck?(*names)
+  def failed_precondition?(*error_codes)
+    component == :preconditions && failed_precheck?(*error_codes)
   end
   alias_method :failed_preconditions?, :failed_precondition?
 

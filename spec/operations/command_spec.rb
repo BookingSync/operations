@@ -272,7 +272,7 @@ RSpec.describe Operations::Command do
     end
 
     context "when idempotency check failed" do
-      let(:context) { { admin: true, error: nil } }
+      let(:context) { { admin: true, error: "Error" } }
       let(:idempotency_checks) { [->(_, **) { Dry::Monads::Failure(additional: :value) }] }
       let(:operation) { ->(**) { raise } }
 
@@ -284,10 +284,54 @@ RSpec.describe Operations::Command do
             operation: command,
             component: :idempotency,
             params: { name: "Batman" },
-            context: { admin: true, error: nil, additional: :value },
+            context: { admin: true, error: "Error", additional: :value },
             on_success: [],
             on_failure: [],
             errors: be_empty
+          )
+      end
+    end
+
+    context "when idempotency check succeeded" do
+      let(:context) { { admin: true, error: nil } }
+      let(:idempotency_checks) { [->(_, **) { Dry::Monads::Success() }] }
+      let(:operation) { ->(**) { Dry::Monads::Success({ additional: :value }) } }
+
+      it "calls the operation and goes through all the stages" do
+        expect { call }.to change { User.count }
+        expect(call)
+          .to be_success
+          .and have_attributes(
+            operation: command,
+            component: :operation,
+            params: { name: "Batman" },
+            context: { admin: true, error: nil, additional: :value },
+            on_success: [Dry::Monads::Success(:yay)],
+            on_failure: [],
+            errors: be_empty
+          )
+      end
+    end
+
+    context "when idempotency check succeeded but precondition failed" do
+      let(:context) { { admin: true, error: "Error" } }
+      let(:idempotency_checks) { [->(_, **) { Dry::Monads::Success() }] }
+      let(:operation) { ->(**) { Dry::Monads::Success({ additional: :value }) } }
+
+      it "calls the operation and goes through all the stages" do
+        expect { call }.not_to change { User.count }
+        expect(call)
+          .to be_failure
+          .and have_attributes(
+            operation: command,
+            component: :preconditions,
+            params: { name: "Batman" },
+            context: { admin: true, error: "Error" },
+            on_success: [],
+            on_failure: [],
+            errors: have_attributes(
+              to_h: { nil => ["Error"] }
+            )
           )
       end
     end
@@ -341,7 +385,7 @@ RSpec.describe Operations::Command do
 
         context "when on_failure callback failed" do
           let(:on_failure_callback) { ->(_, **) { Dry::Monads::Failure(:wow) } }
-          let(:command_options) { { error_reporter: error_reporter } }
+          let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
           let(:error_reporter) { proc {} }
 
           before { allow(error_reporter).to receive(:call) }
@@ -390,7 +434,7 @@ RSpec.describe Operations::Command do
 
       context "when on_success callback failed but there is a wrapping transaction" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
-        let(:command_options) { { error_reporter: error_reporter } }
+        let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
         let(:error_reporter) { proc {} }
 
         before { allow(error_reporter).to receive(:call) }
@@ -421,7 +465,7 @@ RSpec.describe Operations::Command do
 
       context "when on_success callback failed" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
-        let(:command_options) { { error_reporter: error_reporter } }
+        let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
         let(:error_reporter) { proc {} }
 
         before { allow(error_reporter).to receive(:call) }
@@ -921,9 +965,7 @@ RSpec.describe Operations::Command do
         form_class: "DummyOperation::FormClass",
         form_hydrator: "DummyOperation::FormHydrator",
         form_model_map: { [:attribute] => "attribute_map" },
-        info_reporter: "DummyOperation::InfoReporter",
-        error_reporter: "DummyOperation::ErrorReporter",
-        transaction: "DummyOperation::Transaction"
+        configuration: { "after_commit" => {}, "error_reporter" => {}, "transaction" => {} }
       )
     end
   end
