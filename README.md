@@ -807,13 +807,11 @@ class Order::MarkAsCompleted
     )
   end
 
+  # We use `merge` method here to dry the code a bit.
   def self.kafka
-    @kafka ||= Operations::Command.new(
-      new,
+    @kafka ||= system.merge(
       contract: Order::MarkAsCompleted::KafkaContract.new,
-      policy: nil,
       idempotency: [Idempotency::ProcessedEvents.new],
-      preconditions: [Order::RequireStatus.new(:processing)]
     )
   end
 end

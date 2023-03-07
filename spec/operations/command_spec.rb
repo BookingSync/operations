@@ -131,6 +131,30 @@ RSpec.describe Operations::Command do
     end
   end
 
+  describe "#merge" do
+    subject(:merge) { command.merge(**changes) }
+
+    let(:new_on_success) { ->(**) {} }
+    let(:changes) do
+      {
+        operation: :ignored,
+        policies: [policy, additional_policy],
+        on_success: [new_on_success]
+      }
+    end
+
+    specify do
+      expect(merge).to have_attributes(
+        operation: operation,
+        contract: contract,
+        policies: [policy, additional_policy],
+        preconditions: preconditions,
+        on_success: [new_on_success],
+        on_failure: on_failure
+      )
+    end
+  end
+
   describe "#form_class" do
     subject(:form_class) { command.form_class }
 
