@@ -205,6 +205,12 @@ class Operations::Command
     super(operation, preconditions: preconditions, on_success: after, **options)
   end
 
+  # Instantiates a new command with the given fields updated.
+  # Useful for defining multiple commands for a single operation body.
+  def merge(**changes)
+    self.class.new(operation, **self.class.dry_initializer.attributes(self), **changes)
+  end
+
   # Executes all the components in a particular order. Returns the result
   # on any step failure. First it validates the user input with the contract
   # then it checks the policy and preconditions and if everything passes -
