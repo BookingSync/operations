@@ -147,7 +147,7 @@ class Operations::Command
     end
 
     def sentry_context
-      operation_result.as_json
+      operation_result.as_json(include_command: true)
     end
   end
 
@@ -290,7 +290,7 @@ class Operations::Command
     end
   end
 
-  def as_json
+  def as_json(*)
     {
       **main_components_as_json,
       **form_components_as_json,

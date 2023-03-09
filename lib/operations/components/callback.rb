@@ -38,7 +38,7 @@ class Operations::Components::Callback < Operations::Components::Base
     if result.public_send(callback_type).any?(Failure)
       error_reporter&.call(
         "Operation #{callback_type} side-effects went sideways",
-        result: result.as_json
+        result: result.as_json(include_command: true)
       )
     end
 

@@ -68,7 +68,7 @@ RSpec.describe Operations::Components::OnFailure do
         )
       expect(error_reporter).to have_received(:call).with(
         "Operation on_failure side-effects went sideways",
-        result: call.as_json
+        result: call.as_json(include_command: true)
       ).once
     end
   end
