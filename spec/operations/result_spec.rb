@@ -209,7 +209,7 @@ RSpec.describe Operations::Result do
   end
 
   describe "#as_json" do
-    subject(:as_json) { result.as_json }
+    subject(:as_json) { result.as_json(:ignored_arg, ignored: :kwarg) }
 
     let(:traceable_object) { Struct.new(:id, :name) }
     let(:anonymous_object) { Struct.new(:name) }
@@ -253,7 +253,6 @@ RSpec.describe Operations::Result do
     specify do
       expect(as_json).to include(
         component: :contract,
-        command: command_json,
         params: { id: 123, name: "Jon", lastname: "Snow" },
         context: { record: "TraceableObject#1", object: "AnonymousObject" },
         on_success: match([
@@ -266,6 +265,28 @@ RSpec.describe Operations::Result do
         ]),
         errors: { "column" => ["Error message"] }
       )
+    end
+
+    context "when include_command: true" do
+      subject(:as_json) { result.as_json(include_command: true) }
+
+      specify do
+        expect(as_json).to include(
+          component: :contract,
+          command: command_json,
+          params: { id: 123, name: "Jon", lastname: "Snow" },
+          context: { record: "TraceableObject#1", object: "AnonymousObject" },
+          on_success: match([
+            { "value" => { "Entity" => "Model#1" } },
+            include("trace", "value" => { "additional" => "value" })
+          ]),
+          on_failure: match([
+            { "value" => { "Entity" => "Model#1" } },
+            include("trace", "value" => { "additional" => "value" })
+          ]),
+          errors: { "column" => ["Error message"] }
+        )
+      end
     end
   end
 end

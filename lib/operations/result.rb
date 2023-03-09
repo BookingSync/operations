@@ -92,16 +92,17 @@ class Operations::Result
     end
   end
 
-  def as_json
-    {
+  def as_json(*, include_command: false, **)
+    hash = {
       component: component,
-      command: operation.as_json,
       params: params,
       context: context_as_json,
       on_success: on_success.as_json,
       on_failure: on_failure.as_json,
       errors: errors(full: true).to_h
     }
+    hash[:command] = operation.as_json if include_command
+    hash
   end
 
   private

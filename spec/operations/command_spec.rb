@@ -911,7 +911,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#as_json" do
-    subject(:as_json) { command.as_json }
+    subject(:as_json) { command.as_json(:ignored_arg, ignored: :kwarg) }
 
     let(:command) { DummyOperation.instance }
     let(:command_implementation) do

@@ -65,7 +65,7 @@ RSpec.describe Operations::Components::OnSuccess do
       expect(after_commit).to have_received(:call).once
       expect(error_reporter).to have_received(:call).with(
         "Operation on_success side-effects went sideways",
-        result: call.as_json
+        result: call.as_json(include_command: true)
       ).once
     end
   end
