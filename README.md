@@ -731,7 +731,15 @@ class NotifyBoardAdmin
 end
 ```
 
-Also, `on_failure` callback will receive `operation_failure:` key in the context containing all the errors.
+Additionally, a callback `call` method can receive the operation result as the second positional argument which is optional. This enables powerful introspection for generic callbacks.
+
+```ruby
+class PublishCommentUpdatedEvent
+  def call(params, operation_result, comment:, **)
+    PublishEventJob.perform_later('comment', comment, params: params, operation_name: operation_result.operation.operation.class.name.underscore)
+  end
+end
+```
 
 ### Idempotency checks
 

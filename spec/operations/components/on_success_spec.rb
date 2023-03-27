@@ -25,13 +25,18 @@ RSpec.describe Operations::Components::OnSuccess do
   end
 
   describe "#call" do
-    subject(:call) { component.call(params, context, component: :operation) }
+    subject(:call) { component.call(operation_result) }
 
     let(:params) { { name: "Batman" } }
     let(:context) { { subject: 42, entity: "Entity" } }
+    let(:operation_result) do
+      Operations::Result.new(component: :operation, params: params, context: context)
+    end
 
     context "when callback does not failure" do
-      let(:callable) { [->(**) { Dry::Monads::Success({}) }] }
+      let(:callable) do
+        [->(_, operation_result, **) { Dry::Monads::Success({ operation_params: operation_result.params }) }]
+      end
 
       it "doesn't report anything" do
         expect(call)
@@ -40,7 +45,7 @@ RSpec.describe Operations::Components::OnSuccess do
             component: :operation,
             params: { name: "Batman" },
             context: { subject: 42, entity: "Entity" },
-            on_success: [Dry::Monads::Success({})],
+            on_success: [Dry::Monads::Success({ operation_params: { name: "Batman" } })],
             errors: be_empty
           )
         expect(after_commit).to have_received(:call).once

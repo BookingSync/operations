@@ -11,32 +11,25 @@ require "operations/components/callback"
 class Operations::Components::OnSuccess < Operations::Components::Callback
   option :after_commit, type: Operations::Types.Interface(:call)
 
-  def call(params, context, component:)
-    callback_result = after_commit.call { call_entries(params, context, component: component) }
+  def call(operation_result)
+    callback_result = after_commit.call do
+      call_entries(operation_result)
+    end
 
     if callback_result.is_a?(Operations::Result)
       callback_result
     else
-      result(
-        component: component,
-        params: params,
-        context: context
-      )
+      operation_result
     end
   end
 
   private
 
-  def call_entries(params, context, component:)
+  def call_entries(operation_result)
     results = callable.map do |entry|
-      call_entry(entry, params, **context)
+      call_entry(entry, operation_result, **operation_result.context)
     end
 
-    maybe_report_failure(:on_success, result(
-      component: component,
-      params: params,
-      context: context,
-      on_success: results
-    ))
+    maybe_report_failure(:on_success, operation_result.merge(on_success: results))
   end
 end
