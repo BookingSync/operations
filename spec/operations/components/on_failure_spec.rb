@@ -38,7 +38,7 @@ RSpec.describe Operations::Components::OnFailure do
 
     context "when callback does not fail" do
       let(:callable) do
-        [->(_, operation_result, **) { Dry::Monads::Success({ operation_errors: operation_result.errors.to_h }) }]
+        [->(operation_result) { Dry::Monads::Success({ operation_errors: operation_result.errors.to_h }) }]
       end
 
       it "doesn't report anything" do

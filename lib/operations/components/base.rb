@@ -8,8 +8,14 @@ class Operations::Components::Base
 
   MONADS_DO_WRAPPER_SIGNATURES = [
     [%i[rest *], %i[block &]],
-    [%i[rest *], %i[keyrest **], %i[block &]]
+    [%i[rest], %i[block &]], # Ruby 3.0, 3.1
+    [%i[rest *], %i[keyrest **], %i[block &]],
+    [%i[rest], %i[keyrest], %i[block &]] # Ruby 3.0, 3.1
   ].freeze
+  DEFAULT_NAMES_MAP = { # Ruby 3.0, 3.1
+    rest: "*",
+    keyrest: "**"
+  }.freeze
 
   param :callable, type: Operations::Types.Interface(:call)
   option :message_resolver, type: Operations::Types.Interface(:call), optional: true
@@ -26,16 +32,18 @@ class Operations::Components::Base
   end
 
   def call_args(callable, types:)
-    (@call_args ||= {})[[callable, types]] ||= begin
-      method = callable.respond_to?(:parameters) ? callable : callable.method(:call)
-      # calling super_method here because `Operations::Convenience`
-      # calls `include Dry::Monads::Do.for(:call)` which creates
-      # a delegator method around the original one.
-      method = method.super_method if MONADS_DO_WRAPPER_SIGNATURES.include?(method.parameters)
-      method.parameters.filter_map do |(type, name)|
-        name if types.include?(type)
-      end
+    (@call_args ||= {})[[callable, types]] ||= call_method(callable).parameters.filter_map do |(type, name)|
+      name || DEFAULT_NAMES_MAP[type] if types.include?(type)
     end
+  end
+
+  def call_method(callable)
+    method = callable.respond_to?(:parameters) ? callable : callable.method(:call)
+    # calling super_method here because `Operations::Convenience`
+    # calls `include Dry::Monads::Do.for(:call)` which creates
+    # a delegator method around the original one.
+    method = method.super_method if MONADS_DO_WRAPPER_SIGNATURES.include?(method.parameters)
+    method
   end
 
   def errors(data)

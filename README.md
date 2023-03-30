@@ -731,12 +731,17 @@ class NotifyBoardAdmin
 end
 ```
 
-Additionally, a callback `call` method can receive the operation result as the second positional argument which is optional. This enables powerful introspection for generic callbacks.
+Additionally, a callback `call` method can receive the operation result instead of params and context. This enables powerful introspection for generic callbacks.
 
 ```ruby
 class PublishCommentUpdatedEvent
-  def call(params, operation_result, comment:, **)
-    PublishEventJob.perform_later('comment', comment, params: params, operation_name: operation_result.operation.operation.class.name.underscore)
+  def call(operation_result)
+    PublishEventJob.perform_later(
+      'comment',
+      operation_result.context[:comment],
+      params: operation_result.params,
+      operation_name: operation_result.operation.operation.class.name.underscore
+    )
   end
 end
 ```

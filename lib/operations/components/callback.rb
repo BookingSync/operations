@@ -28,14 +28,17 @@ class Operations::Components::Callback < Operations::Components::Base
 
   def entry_result(entry, operation_result, **context)
     args = call_args(entry, types: %i[req opt])
+    kwargs = call_args(entry, types: %i[key keyreq keyrest])
 
-    case args.size
-    when 1
+    case [args.size, kwargs.present?]
+    when [1, true]
       entry.call(operation_result.params, **context)
-    when 2
-      entry.call(operation_result.params, operation_result, **context)
-    else
+    when [1, false]
+      entry.call(operation_result)
+    when [0, true]
       entry.call(**context)
+    else
+      raise "Invalid callback `#call` signature. Should be either `(params, **context)` or `(operation_result)`"
     end
   end
 

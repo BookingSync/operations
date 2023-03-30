@@ -35,7 +35,7 @@ RSpec.describe Operations::Components::OnSuccess do
 
     context "when callback does not failure" do
       let(:callable) do
-        [->(_, operation_result, **) { Dry::Monads::Success({ operation_params: operation_result.params }) }]
+        [->(operation_result) { Dry::Monads::Success({ operation_params: operation_result.params }) }]
       end
 
       it "doesn't report anything" do
