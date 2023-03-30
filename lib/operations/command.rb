@@ -343,20 +343,8 @@ class Operations::Command
 
     return operation_result unless operation_result.component == :operation
 
-    if operation_result.success?
-      component(:on_success).call(
-        operation_result.params,
-        operation_result.context,
-        component: operation_result.component
-      )
-    else
-      component(:on_failure).call(
-        operation_result.params,
-        operation_result.context,
-        component: operation_result.component,
-        errors: operation_result.errors
-      )
-    end
+    component = operation_result.success? ? component(:on_success) : component(:on_failure)
+    component.call(operation_result)
   end
 
   def execute_operation(params, context)

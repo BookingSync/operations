@@ -22,7 +22,7 @@ RSpec.describe Operations::Components::OnFailure do
   end
 
   describe "#call" do
-    subject(:call) { component.call(params, context, component: :preconditions, errors: errors) }
+    subject(:call) { component.call(operation_result) }
 
     let(:params) { { name: "Batman" } }
     let(:context) { { subject: 42, entity: "Entity" } }
@@ -32,9 +32,14 @@ RSpec.describe Operations::Components::OnFailure do
         with: { nil => ["error"] },
         to_h: { nil => ["error"] })
     end
+    let(:operation_result) do
+      Operations::Result.new(component: :preconditions, params: params, context: context, errors: errors)
+    end
 
     context "when callback does not fail" do
-      let(:callable) { [->(operation_failure:, **) { Dry::Monads::Success({ operation_failure: operation_failure }) }] }
+      let(:callable) do
+        [->(operation_result) { Dry::Monads::Success({ operation_errors: operation_result.errors.to_h }) }]
+      end
 
       it "doesn't report anything" do
         expect(call)
@@ -44,7 +49,7 @@ RSpec.describe Operations::Components::OnFailure do
             params: { name: "Batman" },
             context: { subject: 42, entity: "Entity" },
             on_failure: [
-              Dry::Monads::Success({ operation_failure: { nil => ["error"] } })
+              Dry::Monads::Success({ operation_errors: { nil => ["error"] } })
             ],
             errors: errors
           )
