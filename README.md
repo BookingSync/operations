@@ -921,7 +921,7 @@ class Post::Update
       ...,
       form_hydrator: Post::Update::Hydrator.new,
       form_model_map: {
-        [%r{.+}] => Post
+        [%r{.+}] => "Post"
       }
     )
   end
