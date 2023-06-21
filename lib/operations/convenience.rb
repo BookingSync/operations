@@ -83,23 +83,15 @@ module Operations::Convenience
     const_set("#{prefix.to_s.camelize}Contract", contract)
   end
 
-  def policy(prefix = nil, from: Object, &block)
-    raise ArgumentError.new("Please provide either a superclass or a block for policy") unless from || block
+  %w[policy precondition callback].each do |kind|
+    define_method kind do |prefix = nil, from: Object, &block|
+      raise ArgumentError.new("Please provide either a superclass or a block for #{kind}") unless from || block
 
-    policy = Class.new(from)
-    policy.extend(Dry::Initializer) unless from
-    policy.define_method(:call, &block) if block
+      klass = Class.new(from)
+      klass.extend(Dry::Initializer) unless from
+      klass.define_method(:call, &block) if block
 
-    const_set("#{prefix.to_s.camelize}Policy", policy)
-  end
-
-  def precondition(prefix = nil, from: Object, &block)
-    raise ArgumentError.new("Please provide either a superclass or a block for precondition") unless from || block
-
-    precondition = Class.new(from)
-    precondition.extend(Dry::Initializer) unless from
-    precondition.define_method(:call, &block) if block
-
-    const_set("#{prefix.to_s.camelize}Precondition", precondition)
+      const_set("#{prefix.to_s.camelize}#{kind.camelize}", klass)
+    end
   end
 end
