@@ -102,9 +102,11 @@ RSpec.describe Operations::Components::Preconditions do
             context: { subject: 42 },
             on_success: [],
             errors: have_attributes(
-              to_h: { nil => [
-                { text: "Failure 1", code: :failure1 }
-              ] }
+              to_h: {
+                nil => [
+                  { text: "Failure 1", code: :failure1 }
+                ]
+              }
             )
           )
       end

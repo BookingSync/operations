@@ -51,10 +51,12 @@ RSpec.describe Operations::Components::Policies do
             context: { admin: false },
             on_success: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized!",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized!",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
@@ -79,10 +81,12 @@ RSpec.describe Operations::Components::Policies do
             context: { admin: Dry::Monads::Failure(:failure1) },
             on_success: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Failure 1",
-                code: :failure1
-              ] }
+              to_h: {
+                nil => [
+                  text: "Failure 1",
+                  code: :failure1
+                ]
+              }
             )
           )
       end
@@ -108,10 +112,12 @@ RSpec.describe Operations::Components::Policies do
             context: { admin: Dry::Monads::Success(), owner: false },
             on_success: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized!",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized!",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
@@ -130,10 +136,12 @@ RSpec.describe Operations::Components::Policies do
             context: { admin: Dry::Monads::Failure(:failure1), owner: false },
             on_success: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Failure 1",
-                code: :failure1
-              ] }
+              to_h: {
+                nil => [
+                  text: "Failure 1",
+                  code: :failure1
+                ]
+              }
             )
           )
       end

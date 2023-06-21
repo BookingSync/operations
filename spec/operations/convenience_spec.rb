@@ -65,4 +65,42 @@ RSpec.describe Operations::Convenience do
       expect(contract.schema.key_map.keys.map(&:name)).to eq([:name])
     end
   end
+
+  %w[policy precondition callback].each do |kind|
+    describe "##{kind}" do
+      subject(:component) { dummy_operation.public_send(kind) { :foobar } }
+
+      specify do
+        expect(component.name).to eq("DummyOperation::#{kind.camelize}")
+        expect(component.new.call).to eq(:foobar)
+      end
+
+      context "with a superclass" do
+        subject(:component) { dummy_operation.public_send(kind, from: parent) { other_method } }
+
+        let(:parent) do
+          Class.new do
+            def other_method
+              :foobar
+            end
+          end
+        end
+
+        specify do
+          expect(component.name).to eq("DummyOperation::#{kind.camelize}")
+          expect(component).to be < parent
+          expect(component.new.call).to eq(:foobar)
+        end
+      end
+
+      context "with prefix" do
+        subject(:component) { dummy_operation.public_send(kind, :prefix) { :foobar } }
+
+        specify do
+          expect(component.name).to eq("DummyOperation::Prefix#{kind.camelize}")
+          expect(component.new.call).to eq(:foobar)
+        end
+      end
+    end
+  end
 end

@@ -240,10 +240,12 @@ RSpec.describe Operations::Command do
             on_success: [],
             on_failure: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
@@ -265,10 +267,12 @@ RSpec.describe Operations::Command do
             on_success: [],
             on_failure: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
@@ -657,10 +661,12 @@ RSpec.describe Operations::Command do
             on_success: [],
             on_failure: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
@@ -741,10 +747,12 @@ RSpec.describe Operations::Command do
             on_success: [],
             on_failure: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
@@ -818,10 +826,12 @@ RSpec.describe Operations::Command do
             on_success: [],
             on_failure: [],
             errors: have_attributes(
-              to_h: { nil => [
-                text: "Unauthorized",
-                code: :unauthorized
-              ] }
+              to_h: {
+                nil => [
+                  text: "Unauthorized",
+                  code: :unauthorized
+                ]
+              }
             )
           )
       end
