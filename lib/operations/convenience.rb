@@ -89,7 +89,7 @@ module Operations::Convenience
 
       klass = Class.new(from)
 
-      unless from
+      if from == Object
         klass.extend(Dry::Initializer)
         klass.include(Dry::Monads[:result])
       end
