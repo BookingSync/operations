@@ -88,12 +88,7 @@ module Operations::Convenience
       raise ArgumentError.new("Please provide either a superclass or a block for #{kind}") unless from || block
 
       klass = Class.new(from)
-
-      unless from
-        klass.extend(Dry::Initializer)
-        klass.include(Dry::Monads[:result])
-      end
-
+      klass.extend(Dry::Initializer) unless from
       klass.define_method(:call, &block) if block
 
       const_set("#{prefix.to_s.camelize}#{kind.camelize}", klass)
