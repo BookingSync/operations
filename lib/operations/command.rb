@@ -165,7 +165,7 @@ class Operations::Command
     Operations::Types::String
   ), default: proc { {} }
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
-  option :form_class, Operations::Types::Class, default: proc { build_form }
+  option :form_class, Operations::Types::Class.optional, default: proc {}
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
   option :configuration, Operations::Configuration, default: proc { Operations.default_config }
 
@@ -203,6 +203,7 @@ class Operations::Command
 
     preconditions.push(precondition) if precondition.present?
     super(operation, preconditions: preconditions, on_success: after, **options)
+    @form_class ||= build_form_class
   end
 
   # Instantiates a new command with the given fields updated.
@@ -264,7 +265,7 @@ class Operations::Command
   # These 3 methods added for convenience. They return boolean result
   # instead of Operations::Result. True on success and false on failure.
   %i[callable allowed possible].each do |method|
-    define_method "#{method}?" do |**kwargs|
+    define_method :"#{method}?" do |**kwargs|
       public_send(method, **kwargs).success?
     end
   end
@@ -395,7 +396,7 @@ class Operations::Command
     end
   end
 
-  def build_form
+  def build_form_class
     ::Operations::Form::Builder
       .new(base_class: form_base)
       .build(

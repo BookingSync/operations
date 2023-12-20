@@ -157,7 +157,7 @@ class Operations::Form
     name = name.to_sym
     return unless self.class.attributes.key?(name)
 
-    nested_name = "#{name}_attributes".to_sym
+    nested_name = :"#{name}_attributes"
     value = data.key?(nested_name) ? data[nested_name] : data[name]
 
     (@attributes_cache ||= {})[name] ||= yield(value, self.class.attributes[name])

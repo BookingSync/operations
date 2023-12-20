@@ -52,7 +52,7 @@ class Operations::Form::Builder
       nested_attributes_suffix,
       nested_attributes_collection
     )
-    form.define_method "#{hash_key.name}=", proc { |attributes| attributes } if nested_attributes_suffix
+    form.define_method :"#{hash_key.name}=", proc { |attributes| attributes } if nested_attributes_suffix
 
     key_path = path + [name]
     nested_form = traverse(members, form, name.underscore.camelize, model_map, key_path)

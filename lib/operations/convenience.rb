@@ -80,7 +80,7 @@ module Operations::Convenience
     contract = Class.new(from)
     contract.config.messages.namespace = name.underscore
     contract.class_eval(&block)
-    const_set("#{prefix.to_s.camelize}Contract", contract)
+    const_set(:"#{prefix.to_s.camelize}Contract", contract)
   end
 
   %w[policy precondition callback].each do |kind|
@@ -96,7 +96,7 @@ module Operations::Convenience
 
       klass.define_method(:call, &block) if block
 
-      const_set("#{prefix.to_s.camelize}#{kind.camelize}", klass)
+      const_set(:"#{prefix.to_s.camelize}#{kind.camelize}", klass)
     end
   end
 end
