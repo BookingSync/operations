@@ -165,7 +165,7 @@ class Operations::Command
     Operations::Types::String
   ), default: proc { {} }
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
-  option :form_class, Operations::Types::Class.optional, default: proc {}
+  option :form_class, Operations::Types::Class.optional, default: proc {}, reader: false
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
   option :configuration, Operations::Configuration, default: proc { Operations.default_config }
 
@@ -203,7 +203,6 @@ class Operations::Command
 
     preconditions.push(precondition) if precondition.present?
     super(operation, preconditions: preconditions, on_success: after, **options)
-    @form_class ||= build_form_class
   end
 
   # Instantiates a new command with the given fields updated.
@@ -297,6 +296,10 @@ class Operations::Command
       **form_components_as_json,
       configuration: configuration.as_json
     }
+  end
+
+  def form_class
+    @form_class ||= build_form_class
   end
 
   private
