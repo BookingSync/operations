@@ -130,10 +130,10 @@ class Operations::Command
   COMPONENTS = %i[contract policies idempotency preconditions operation on_success on_failure].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
 
+  extend Dry::Initializer
   include Dry::Monads[:result]
   include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad, :execute_operation)
   include Dry::Equalizer(*COMPONENTS)
-  extend Dry::Initializer
 
   # Provides message and meaningful sentry context for failed operations
   class OperationFailed < StandardError
@@ -164,7 +164,7 @@ class Operations::Command
     ),
     Operations::Types::String
   ), default: proc { {} }
-  option :form_base, Operations::Types::Class, default: proc { ::Operations::Form }
+  option :form_base, Operations::Types::Class, default: proc { ::Operations::Form::Base }
   option :form_class, Operations::Types::Class.optional, default: proc {}, reader: false
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
   option :configuration, Operations::Configuration, default: proc { Operations.default_config }
@@ -404,9 +404,9 @@ class Operations::Command
       .new(base_class: form_base)
       .build(
         key_map: contract.class.schema.key_map,
+        model_map: form_model_map,
         namespace: operation.class,
-        class_name: form_class_name,
-        model_map: form_model_map
+        class_name: form_class_name
       )
   end
 

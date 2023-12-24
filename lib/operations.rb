@@ -18,6 +18,7 @@ require "operations/convenience"
 require "operations/command"
 require "operations/result"
 require "operations/form"
+require "operations/form/base"
 require "operations/form/attribute"
 require "operations/form/builder"
 
