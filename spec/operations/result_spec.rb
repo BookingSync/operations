@@ -234,7 +234,7 @@ RSpec.describe Operations::Result do
         on_success: ["DummyOperation::OnSuccess"],
         on_failure: ["DummyOperation::OnFailure"],
         form_model_map: { [:attribute] => "attribute_map" },
-        form_base: "Operations::Form",
+        form_base: "Operations::Form::Base",
         form_class: "DummyOperation::Form",
         form_hydrator: "Hydrator",
         info_reporter: "InfoReporter",

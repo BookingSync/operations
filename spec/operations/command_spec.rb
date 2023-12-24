@@ -80,7 +80,7 @@ RSpec.describe Operations::Command do
         preconditions: [],
         on_success: [],
         on_failure: [],
-        form_class: be < Operations::Form
+        form_class: be < Operations::Form::Base
       )
     end
 
@@ -102,7 +102,7 @@ RSpec.describe Operations::Command do
           preconditions: [an_instance_of(operation_class::Precondition) & have_attributes(repo: repo)],
           on_success: [],
           on_failure: [],
-          form_class: be < Operations::Form
+          form_class: be < Operations::Form::Base
         )
       end
     end
@@ -125,7 +125,7 @@ RSpec.describe Operations::Command do
           preconditions: [],
           on_success: [],
           on_failure: [],
-          form_class: be < Operations::Form
+          form_class: be < Operations::Form::Base
         )
       end
     end
