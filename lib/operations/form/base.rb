@@ -141,6 +141,13 @@ class Operations::Form::Base
       end
     end
 
+    def to_hash
+      {
+        attributes: attributes,
+        errors: errors
+      }
+    end
+
     private
 
     def add_messages(errors, key, messages)

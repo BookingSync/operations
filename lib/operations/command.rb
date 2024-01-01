@@ -290,11 +290,11 @@ class Operations::Command
     end
   end
 
-  def as_json(*)
+  def to_hash
     {
-      **main_components_as_json,
-      **form_components_as_json,
-      configuration: configuration.as_json
+      **main_components_to_hash,
+      **form_components_to_hash,
+      configuration: configuration
     }
   end
 
@@ -304,7 +304,7 @@ class Operations::Command
 
   private
 
-  def main_components_as_json
+  def main_components_to_hash
     {
       operation: operation.class.name,
       contract: contract.class.name,
@@ -316,7 +316,7 @@ class Operations::Command
     }
   end
 
-  def form_components_as_json
+  def form_components_to_hash
     {
       form_model_map: form_model_map,
       form_base: form_base.name,

@@ -921,7 +921,7 @@ RSpec.describe Operations::Command do
   end
 
   describe "#as_json" do
-    subject(:as_json) { command.as_json(:ignored_arg, ignored: :kwarg) }
+    subject(:as_json) { command.as_json }
 
     let(:command) { DummyOperation.instance }
     let(:command_implementation) do
@@ -988,18 +988,18 @@ RSpec.describe Operations::Command do
 
     specify do
       expect(as_json).to eq(
-        operation: "DummyOperation",
-        contract: "DummyOperation::Contract",
-        policies: ["DummyOperation::Policy"],
-        preconditions: ["DummyOperation::Precondition"],
-        idempotency: ["DummyOperation::IdempotencyCheck"],
-        on_success: ["DummyOperation::OnSuccess"],
-        on_failure: ["DummyOperation::OnFailure"],
-        form_base: "DummyOperation::FormBase",
-        form_class: "DummyOperation::FormClass",
-        form_hydrator: "DummyOperation::FormHydrator",
-        form_model_map: { [:attribute] => "attribute_map" },
-        configuration: { "after_commit" => {}, "error_reporter" => {}, "transaction" => {} }
+        "operation" => "DummyOperation",
+        "contract" => "DummyOperation::Contract",
+        "policies" => ["DummyOperation::Policy"],
+        "preconditions" => ["DummyOperation::Precondition"],
+        "idempotency" => ["DummyOperation::IdempotencyCheck"],
+        "on_success" => ["DummyOperation::OnSuccess"],
+        "on_failure" => ["DummyOperation::OnFailure"],
+        "form_base" => "DummyOperation::FormBase",
+        "form_class" => "DummyOperation::FormClass",
+        "form_hydrator" => "DummyOperation::FormHydrator",
+        "form_model_map" => { "[:attribute]" => "attribute_map" },
+        "configuration" => { "after_commit" => {}, "error_reporter" => {}, "transaction" => {} }
       )
     end
   end
