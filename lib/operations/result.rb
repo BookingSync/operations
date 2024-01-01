@@ -6,9 +6,10 @@
 # execution).
 # Also able to spawn a form object basing on the operation params and errors.
 class Operations::Result
+  extend Dry::Initializer
   include Dry::Monads[:result]
   include Dry::Equalizer(:operation, :component, :params, :context, :on_success, :errors)
-  extend Dry::Initializer
+  include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
   option :operation, type: Operations::Types::Instance(Operations::Command), optional: true
   option :component, type: Operations::Types::Symbol.enum(*Operations::Command::COMPONENTS)
@@ -75,21 +76,6 @@ class Operations::Result
       operation.form_hydrator.call(operation.form_class, params, **context),
       messages: errors.to_h
     )
-  end
-
-  def pretty_print(pp)
-    attributes = self.class.dry_initializer.attributes(self)
-
-    pp.object_group(self) do
-      pp.seplist(attributes.keys, -> { pp.text "," }) do |name|
-        pp.breakable " "
-        pp.group(1) do
-          pp.text name.to_s
-          pp.text " = "
-          pp.pp send(name)
-        end
-      end
-    end
   end
 
   def as_json(options = {})
