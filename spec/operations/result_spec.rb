@@ -209,7 +209,7 @@ RSpec.describe Operations::Result do
   end
 
   describe "#as_json" do
-    subject(:as_json) { result.as_json(:ignored_arg, ignored: :kwarg) }
+    subject(:as_json) { result.as_json }
 
     let(:traceable_object) { Struct.new(:id, :name) }
     let(:anonymous_object) { Struct.new(:name) }
@@ -224,7 +224,7 @@ RSpec.describe Operations::Result do
     let(:on_success) { [Dry::Monads::Success(Entity: "Model#1"), Dry::Monads::Failure(additional: :value)] }
     let(:on_failure) { [Dry::Monads::Success(Entity: "Model#1"), Dry::Monads::Failure(additional: :value)] }
     let(:errors) { Dry::Validation::MessageSet.new([message]).freeze }
-    let(:command_json) do
+    let(:command_to_hash) do
       {
         operation: "DummyOperation",
         contract: "DummyOperation::Contract",
@@ -247,7 +247,7 @@ RSpec.describe Operations::Result do
       stub_const("TraceableObject", traceable_object)
       stub_const("AnonymousObject", anonymous_object)
 
-      allow(operation).to receive(:as_json).and_return(command_json)
+      allow(operation).to receive(:to_hash).and_return(command_to_hash)
     end
 
     specify do
@@ -273,7 +273,7 @@ RSpec.describe Operations::Result do
       specify do
         expect(as_json).to include(
           component: :contract,
-          command: command_json,
+          command: command_to_hash,
           params: { id: 123, name: "Jon", lastname: "Snow" },
           context: { record: "TraceableObject#1", object: "AnonymousObject" },
           on_success: match([

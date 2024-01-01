@@ -92,16 +92,20 @@ class Operations::Result
     end
   end
 
-  def as_json(*, include_command: false, **)
+  def as_json(options = {})
+    to_hash(**options.slice(:include_command))
+  end
+
+  def to_hash(include_command: false)
     hash = {
       component: component,
       params: params,
-      context: context_as_json,
+      context: context_to_hash,
       on_success: on_success.as_json,
       on_failure: on_failure.as_json,
       errors: errors(full: true).to_h
     }
-    hash[:command] = operation.as_json if include_command
+    hash[:command] = operation&.to_hash if include_command
     hash
   end
 
@@ -112,7 +116,7 @@ class Operations::Result
     (errors.map { |error| error.meta[:code] } & names).present?
   end
 
-  def context_as_json
+  def context_to_hash
     context.transform_values do |context_value|
       next context_value.class.name unless context_value.respond_to?(:id)
 

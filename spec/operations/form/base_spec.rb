@@ -305,6 +305,39 @@ RSpec.describe Operations::Form::Base do
         it { is_expected.to be_valid }
       end
     end
+
+    describe "#as_json" do
+      subject(:as_json) { form.as_json }
+
+      let(:messages) do
+        {
+          name: ["should be present"],
+          author: { title: [:invalid] }
+        }
+      end
+      let(:attributes) do
+        {
+          name: "Name",
+          author: { ignored: 42 },
+          ignored: 42
+        }
+      end
+
+      specify do
+        expect(as_json).to eq({
+          "attributes" => {
+            "author" => {
+              "attributes" => { "title" => nil },
+              "errors" => { title: ["is invalid"] }
+            },
+            "name" => "Name",
+            "posts" => [],
+            "tags" => []
+          },
+          "errors" => { name: ["should be present"] }
+        })
+      end
+    end
   end
 
   it_behaves_like "a form base", form_base: described_class
