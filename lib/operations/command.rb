@@ -134,6 +134,7 @@ class Operations::Command
   include Dry::Monads[:result]
   include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad, :execute_operation)
   include Dry::Equalizer(*COMPONENTS)
+  include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
   # Provides message and meaningful sentry context for failed operations
   class OperationFailed < StandardError
@@ -273,21 +274,6 @@ class Operations::Command
   # True on success and false on failure.
   def valid?(*args, **kwargs)
     validate(*args, **kwargs).success?
-  end
-
-  def pretty_print(pp)
-    attributes = self.class.dry_initializer.attributes(self)
-
-    pp.object_group(self) do
-      pp.seplist(attributes.keys, -> { pp.text "," }) do |name|
-        pp.breakable " "
-        pp.group(1) do
-          pp.text name.to_s
-          pp.text " = "
-          pp.pp send(name)
-        end
-      end
-    end
   end
 
   def to_hash

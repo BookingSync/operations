@@ -23,8 +23,11 @@ class Operations::Form::Base
   # :nodoc:
   module ClassMethods
     def self.extended(base)
+      base.singleton_class.include Operations::Inspect.new(:attributes)
+
       base.extend Dry::Initializer
       base.include Dry::Equalizer(:attributes, :errors)
+      base.include Operations::Inspect.new(:attributes, :errors)
 
       base.param :data,
         type: Operations::Types::Hash.map(Operations::Types::Symbol, Operations::Types::Any),
