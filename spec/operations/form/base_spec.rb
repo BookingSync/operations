@@ -72,7 +72,25 @@ RSpec.describe Operations::Form::Base do
       end
     end
 
-    describe "has_attribute?" do
+    describe ".pretty_inspect" do
+      subject(:pretty_inspect) { form_class.pretty_inspect }
+
+      specify do
+        expect(pretty_inspect).to eq(<<~INSPECT)
+          #<Class
+           attributes={:name=>
+              #<Operations::Form::Attribute name=:name collection=false form=nil model_name=nil>,
+             :tags=>
+              #<Operations::Form::Attribute name=:tags collection=true form=nil model_name=nil>,
+             :author=>
+              #<Operations::Form::Attribute name=:author collection=false form=Dummy::Author model_name=nil>,
+             :posts=>
+              #<Operations::Form::Attribute name=:posts collection=true form=Dummy::Post model_name=nil>}>
+        INSPECT
+      end
+    end
+
+    describe "#has_attribute?" do
       specify do
         expect(form).to have_attribute(:name)
         expect(form).not_to have_attribute(:foobar)
@@ -336,6 +354,24 @@ RSpec.describe Operations::Form::Base do
           },
           "errors" => { name: ["should be present"] }
         })
+      end
+    end
+
+    describe "#pretty_inspect" do
+      subject(:pretty_inspect) { form.pretty_inspect }
+
+      specify do
+        expect(pretty_inspect).to eq(<<~INSPECT)
+          #<Dummy::Form
+           attributes={:name=>nil,
+             :tags=>[],
+             :author=>
+              #<Dummy::Author
+               attributes={:title=>nil},
+               errors=#<ActiveModel::Errors []>>,
+             :posts=>[]},
+           errors=#<ActiveModel::Errors []>>
+        INSPECT
       end
     end
   end

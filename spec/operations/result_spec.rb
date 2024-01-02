@@ -289,4 +289,21 @@ RSpec.describe Operations::Result do
       end
     end
   end
+
+  describe "#pretty_inspect" do
+    subject(:pretty_inspect) { result.pretty_inspect }
+
+    specify do
+      expect(pretty_inspect).to eq(<<~INSPECT)
+        #<Operations::Result
+         operation=#<InstanceDouble(Operations::Command) (anonymous)>,
+         component=:contract,
+         params={},
+         context={},
+         on_success=[],
+         on_failure=[],
+         errors=#<Dry::Validation::MessageSet messages=[] options={}>>
+      INSPECT
+    end
+  end
 end

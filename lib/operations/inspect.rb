@@ -9,7 +9,7 @@ class Operations::Inspect < Module
   def initialize(*attributes, **kwargs)
     super(attributes.flatten(1), **kwargs)
 
-    define_pretty_print(attributes)
+    define_pretty_print(@attributes)
   end
 
   private

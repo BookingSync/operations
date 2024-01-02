@@ -9,7 +9,6 @@ class Operations::Result
   extend Dry::Initializer
   include Dry::Monads[:result]
   include Dry::Equalizer(:operation, :component, :params, :context, :on_success, :errors)
-  include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
   option :operation, type: Operations::Types::Instance(Operations::Command), optional: true
   option :component, type: Operations::Types::Symbol.enum(*Operations::Command::COMPONENTS)
@@ -19,6 +18,8 @@ class Operations::Result
   option :on_failure, type: Operations::Types::Array.of(Operations::Types::Any), default: proc { [] }
   option :errors, type: Operations::Types.Interface(:call) | Operations::Types::Instance(Dry::Validation::MessageSet),
     default: proc { Dry::Validation::MessageSet.new([]).freeze }
+
+  include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
   # Instantiates a new result with the given fields updated
   def merge(**changes)

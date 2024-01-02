@@ -134,7 +134,6 @@ class Operations::Command
   include Dry::Monads[:result]
   include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad, :execute_operation)
   include Dry::Equalizer(*COMPONENTS)
-  include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
   # Provides message and meaningful sentry context for failed operations
   class OperationFailed < StandardError
@@ -169,6 +168,8 @@ class Operations::Command
   option :form_class, Operations::Types::Class.optional, default: proc {}, reader: false
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
   option :configuration, Operations::Configuration, default: proc { Operations.default_config }
+
+  include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
   # A short-cut to initialize operation by convention:
   #

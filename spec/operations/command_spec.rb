@@ -1003,4 +1003,13 @@ RSpec.describe Operations::Command do
       )
     end
   end
+
+  describe "#pretty_inspect" do
+    subject(:pretty_inspect) { command.pretty_inspect }
+
+    specify do
+      expect(pretty_inspect)
+        .to match(%r{\A#<Operations::Command\n operation=[^,]+,\n contract=[^,]+,\n policies=[^,]+,\n})
+    end
+  end
 end
