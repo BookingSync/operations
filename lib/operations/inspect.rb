@@ -16,7 +16,8 @@ class Operations::Inspect < Module
 
   def define_pretty_print(attributes)
     define_method(:pretty_print) do |pp|
-      pp.object_group(self) do
+      object_group_method = self.class.name ? :object_group : :object_address_group
+      pp.public_send(object_group_method, self) do
         pp.seplist(attributes, -> { pp.text "," }) do |name|
           pp.breakable " "
           pp.group(1) do

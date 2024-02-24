@@ -158,12 +158,7 @@ class Operations::Command
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_success, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_failure, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
-  option :form_model_map, Operations::Types::Hash.map(
-    Operations::Types::Coercible::Array.of(
-      Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)
-    ),
-    Operations::Types::String
-  ), default: proc { {} }
+  option :form_model_map, Operations::Form::DeprecatedLegacyModelMapImplementation::TYPE, default: proc { {} }
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form::Base }
   option :form_class, Operations::Types::Class.optional, default: proc {}, reader: false
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
@@ -391,7 +386,7 @@ class Operations::Command
       .new(base_class: form_base)
       .build(
         key_map: contract.class.schema.key_map,
-        model_map: form_model_map,
+        model_map: Operations::Form::DeprecatedLegacyModelMapImplementation.new(form_model_map),
         namespace: operation.class,
         class_name: form_class_name
       )
