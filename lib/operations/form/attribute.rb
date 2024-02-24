@@ -5,14 +5,15 @@
 # legacy UI.
 class Operations::Form::Attribute
   extend Dry::Initializer
-  include Dry::Equalizer(:name, :collection, :form, :model_name)
+  include Dry::Equalizer(:name, :collection, :model_name, :form)
+  include Operations::Inspect.new(:name, :collection, :model_name, :form)
 
   param :name, type: Operations::Types::Coercible::Symbol
-  option :collection, type: Operations::Types::Bool, optional: true, default: proc { false }
-  option :form, type: Operations::Types::Class, optional: true
+  option :collection, type: Operations::Types::Bool, default: proc { false }
   option :model_name,
-    type: Operations::Types::String | Operations::Types.Instance(Class).constrained(lt: ActiveRecord::Base),
-    optional: true
+    type: (Operations::Types::String | Operations::Types.Instance(Class).constrained(lt: ActiveRecord::Base)).optional,
+    default: proc {}
+  option :form, type: Operations::Types::Class.optional, default: proc {}
 
   def model_type
     @model_type ||= owning_model.type_for_attribute(string_name) if model_name

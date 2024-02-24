@@ -2,7 +2,7 @@
 
 RSpec.describe Operations::Form::Base do
   shared_examples "a form base" do |form_base:|
-    subject(:form) { form_class.new(attributes, messages: messages) }
+    subject(:form) { form_class.new(attributes, messages: messages, **options) }
 
     let(:form_class) do
       local_author_class = author_class
@@ -22,11 +22,13 @@ RSpec.describe Operations::Form::Base do
     end
     let(:post_class) do
       Class.new(author_class) do
+        attribute :id
         attribute :text
       end
     end
     let(:attributes) { {} }
     let(:messages) { {} }
+    let(:options) { {} }
 
     before do
       stub_const("Dummy::Form", form_class)
@@ -79,14 +81,63 @@ RSpec.describe Operations::Form::Base do
         expect(pretty_inspect).to eq(<<~INSPECT)
           #<Class
            attributes={:name=>
-              #<Operations::Form::Attribute name=:name collection=false form=nil model_name=nil>,
+              #<Operations::Form::Attribute
+               name=:name,
+               collection=false,
+               model_name=nil,
+               form=nil>,
              :tags=>
-              #<Operations::Form::Attribute name=:tags collection=true form=nil model_name=nil>,
+              #<Operations::Form::Attribute
+               name=:tags,
+               collection=true,
+               model_name=nil,
+               form=nil>,
              :author=>
-              #<Operations::Form::Attribute name=:author collection=false form=Dummy::Author model_name=nil>,
+              #<Operations::Form::Attribute
+               name=:author,
+               collection=false,
+               model_name=nil,
+               form=#<Class
+                 attributes={:title=>
+                    #<Operations::Form::Attribute
+                     name=:title,
+                     collection=false,
+                     model_name=nil,
+                     form=nil>}>>,
              :posts=>
-              #<Operations::Form::Attribute name=:posts collection=true form=Dummy::Post model_name=nil>}>
+              #<Operations::Form::Attribute
+               name=:posts,
+               collection=true,
+               model_name=nil,
+               form=#<Class
+                 attributes={:title=>
+                    #<Operations::Form::Attribute
+                     name=:title,
+                     collection=false,
+                     model_name=nil,
+                     form=nil>,
+                   :id=>
+                    #<Operations::Form::Attribute
+                     name=:id,
+                     collection=false,
+                     model_name=nil,
+                     form=nil>,
+                   :text=>
+                    #<Operations::Form::Attribute
+                     name=:text,
+                     collection=false,
+                     model_name=nil,
+                     form=nil>}>>}>
         INSPECT
+      end
+    end
+
+    describe "#initialize" do
+      specify { expect(form_class.new(name: "Name")).to have_attributes(name: "Name") }
+
+      specify do
+        expect(form_class.new({ name: "Name" }, messages: { name: ["Name error"] }))
+          .to have_attributes(name: "Name", errors: have_attributes(to_hash: { name: ["Name error"] }))
       end
     end
 
@@ -149,9 +200,9 @@ RSpec.describe Operations::Form::Base do
             tags: ["tag1"],
             author: have_attributes(class: author_class, attributes: { title: "Batman" }),
             posts: [
-              have_attributes(class: post_class, attributes: { title: "Post1", text: nil }),
+              have_attributes(class: post_class, attributes: { id: nil, title: "Post1", text: nil }),
               "wtf",
-              have_attributes(class: post_class, attributes: { title: nil, text: nil })
+              have_attributes(class: post_class, attributes: { id: nil, title: nil, text: nil })
             ]
           )
         end
@@ -169,7 +220,7 @@ RSpec.describe Operations::Form::Base do
           expect(form.attributes).to include(
             author: have_attributes(class: author_class, attributes: { title: "Batman" }),
             posts: [
-              have_attributes(class: post_class, attributes: { title: "Post1", text: nil })
+              have_attributes(class: post_class, attributes: { id: nil, title: "Post1", text: nil })
             ]
           )
         end
@@ -199,9 +250,85 @@ RSpec.describe Operations::Form::Base do
       end
     end
 
+    describe "#method_missing" do
+      let(:attributes) do
+        {
+          name: 42,
+          tags: ["tag1"]
+        }
+      end
+
+      specify { expect(form.name).to eq(42) }
+      specify { expect(form.tags).to eq(["tag1"]) }
+      specify { expect(form.build_author).to be_a(author_class) & have_attributes(title: nil) }
+
+      specify do
+        expect(form.build_author({ title: "foo" }, messages: {}))
+          .to be_a(author_class) & have_attributes(title: "foo")
+      end
+
+      specify { expect(form.build_post).to be_a(post_class) & have_attributes(id: nil, title: nil) }
+
+      specify do
+        expect(form.build_post({ title: "foo" }, messages: {}))
+          .to be_a(post_class) & have_attributes(id: nil, title: "foo")
+      end
+
+      specify { expect(form.build_tag).to be_nil }
+      specify { expect(form.foobar).to be_nil }
+    end
+
+    describe "#respond_to_missing?" do
+      specify { expect(form).to respond_to(:name) }
+      specify { expect(form).to respond_to(:tags) }
+      specify { expect(form).to respond_to(:build_author) }
+      specify { expect(form).to respond_to(:build_post) }
+      specify { expect(form).to respond_to(:author_attributes=) }
+      specify { expect(form).to respond_to(:posts_attributes=) }
+      specify { expect(form).not_to respond_to(:foobar) }
+      specify { expect(form).not_to respond_to(:build_tag) }
+      specify { expect(form).not_to respond_to(:tags_attributes=) }
+    end
+
     describe "#model_name" do
       specify { expect(form.model_name).to be_a(ActiveModel::Name) }
       specify { expect(form.model_name.to_s).to eq "Dummy::Form" }
+    end
+
+    describe "#persisted?" do
+      subject(:persisted?) { form.persisted? }
+
+      it { is_expected.to be true }
+
+      context "when form has primary_key" do
+        let(:form) { post_class.new }
+
+        it { is_expected.to be false }
+      end
+
+      context "when form has primary_key and it is present" do
+        let(:form) { post_class.new(id: 42) }
+
+        it { is_expected.to be true }
+      end
+    end
+
+    describe "#new_record?" do
+      subject(:new_record?) { form.new_record? }
+
+      it { is_expected.to be false }
+
+      context "when form has primary_key" do
+        let(:form) { post_class.new }
+
+        it { is_expected.to be true }
+      end
+
+      context "when form has primary_key and it is present" do
+        let(:form) { post_class.new(id: 42) }
+
+        it { is_expected.to be false }
+      end
     end
 
     describe "#errors" do
@@ -360,17 +487,21 @@ RSpec.describe Operations::Form::Base do
     describe "#pretty_inspect" do
       subject(:pretty_inspect) { form.pretty_inspect }
 
+      before do
+        allow(form.errors).to receive(:inspect).and_return("#<ActiveModel::Errors>")
+        allow(form.author.errors).to receive(:inspect).and_return("#<ActiveModel::Errors>")
+      end
+
       specify do
-        expect(pretty_inspect).to match(%r{
-          #<Dummy::Form \
-          \sattributes=\{:name=>nil, \
-          \s\s:tags=>\[], \
-          \s\s:author=>\n\s\s\s#<Dummy::Author \
-          \s\s\s\sattributes=\{:title=>nil\}, \
-          \s\s\s\serrors=#<ActiveModel::Errors \[.*?\]>>, \
-          \s\s:posts=>\[\]\}, \
-          \serrors=#<ActiveModel::Errors \[.*?\]>>
-        }x)
+        expect(pretty_inspect).to eq(<<~INSPECT)
+          #<Dummy::Form
+           attributes={:name=>nil,
+             :tags=>[],
+             :author=>
+              #<Dummy::Author attributes={:title=>nil}, errors=#<ActiveModel::Errors>>,
+             :posts=>[]},
+           errors=#<ActiveModel::Errors>>
+        INSPECT
       end
     end
   end

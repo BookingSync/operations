@@ -125,12 +125,11 @@ require "operations/components/on_failure"
 # which contains all the artifacts and the information about the errors
 # should they ever happen.
 class Operations::Command
-  UNDEFINED = Object.new.freeze
-  EMPTY_HASH = {}.freeze
   COMPONENTS = %i[contract policies idempotency preconditions operation on_success on_failure].freeze
   FORM_HYDRATOR = ->(_form_class, params, **_context) { params }
 
   extend Dry::Initializer
+  include Dry::Core::Constants
   include Dry::Monads[:result]
   include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad, :execute_operation)
   include Dry::Equalizer(*COMPONENTS)
@@ -158,12 +157,7 @@ class Operations::Command
   option :preconditions, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_success, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
   option :on_failure, Operations::Types::Array.of(Operations::Types.Interface(:call)), default: -> { [] }
-  option :form_model_map, Operations::Types::Hash.map(
-    Operations::Types::Coercible::Array.of(
-      Operations::Types::String | Operations::Types::Symbol | Operations::Types.Instance(Regexp)
-    ),
-    Operations::Types::String
-  ), default: proc { {} }
+  option :form_model_map, Operations::Form::DeprecatedLegacyModelMapImplementation::TYPE, default: proc { {} }
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form::Base }
   option :form_class, Operations::Types::Class.optional, default: proc {}, reader: false
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
@@ -196,11 +190,11 @@ class Operations::Command
   end
 
   def initialize(
-    operation, policy: UNDEFINED, policies: [UNDEFINED],
+    operation, policy: Undefined, policies: [Undefined],
     precondition: nil, preconditions: [], after: [], **options
   )
     policies_sum = Array.wrap(policy) + policies
-    result_policies = policies_sum - [UNDEFINED] unless policies_sum == [UNDEFINED, UNDEFINED]
+    result_policies = policies_sum - [Undefined] unless policies_sum == [Undefined, Undefined]
     options[:policies] = result_policies if result_policies
 
     preconditions.push(precondition) if precondition.present?
@@ -391,7 +385,7 @@ class Operations::Command
       .new(base_class: form_base)
       .build(
         key_map: contract.class.schema.key_map,
-        model_map: form_model_map,
+        model_map: Operations::Form::DeprecatedLegacyModelMapImplementation.new(form_model_map),
         namespace: operation.class,
         class_name: form_class_name
       )

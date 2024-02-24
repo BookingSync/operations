@@ -20,6 +20,7 @@ require "operations/form"
 require "operations/form/base"
 require "operations/form/attribute"
 require "operations/form/builder"
+require "operations/form/deprecated_legacy_model_map_implementation"
 require "operations/command"
 require "operations/result"
 

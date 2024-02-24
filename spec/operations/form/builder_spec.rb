@@ -8,9 +8,8 @@ RSpec.describe Operations::Form::Builder do
       subject(:form_class) do
         form_builder.build(
           key_map: schema.key_map,
-          namespace: namespace,
-          class_name: "MyForm",
-          model_map: model_map
+          model_map: model_map,
+          **options
         )
       end
 
@@ -43,73 +42,186 @@ RSpec.describe Operations::Form::Builder do
           end
         end
       end
-      let(:namespace) { stub_const("DummyNamespace", Module.new) }
-      let(:model_map) { { ["name"] => "Dummy1", ["translations", %r{singular|plural}] => "Dummy2" } }
+      let(:model_map_hash) { { ["name"] => "Dummy1", ["translations", %r{singular|plural}] => "Dummy2" } }
+      let(:model_map) { Operations::Form::DeprecatedLegacyModelMapImplementation.new(model_map_hash) }
 
-      it "defines attributes tree correctly" do
-        expect(form_class).to be < base_class
-        expect(form_class.name).to eq("DummyNamespace::MyForm")
-        expect(form_class.attributes).to match(
-          name: have_attributes(collection: false, form: nil, model_name: "Dummy1"),
-          posts: have_attributes(collection: true, form: DummyNamespace::MyForm::Post, model_name: nil),
-          translations: have_attributes(collection: false, form: DummyNamespace::MyForm::Translations, model_name: nil)
-        )
-        expect(DummyNamespace::MyForm::Post.attributes).to match(
-          tags: have_attributes(collection: false, form: nil, model_name: nil),
-          title: have_attributes(collection: false, form: nil, model_name: nil)
-        )
-        expect(DummyNamespace::MyForm::Translations.attributes).to match(
-          version: have_attributes(collection: false, form: nil, model_name: nil),
-          singular: have_attributes(
-            collection: false,
-            form: DummyNamespace::MyForm::Translations::Singular,
-            model_name: "Dummy2"
-          ),
-          plural: have_attributes(
-            collection: true,
-            form: DummyNamespace::MyForm::Translations::Plural,
-            model_name: "Dummy2"
-          ),
-          en: have_attributes(
-            collection: false,
-            form: DummyNamespace::MyForm::Translations::En,
-            model_name: nil
-          ),
-          "zh-CN": have_attributes(
-            collection: false,
-            form: DummyNamespace::MyForm::Translations::ZhCn,
-            model_name: nil
+      context "with model_name" do
+        let(:options) { { model_name: "my_form" } }
+
+        it "defines attributes tree correctly" do
+          expect(form_class).to have_attributes(
+            name: nil,
+            model_name: "my_form",
+            attributes: {
+              name: have_attributes(collection: false, form: nil, model_name: "Dummy1"),
+              posts: have_attributes(
+                collection: true,
+                form: have_attributes(
+                  name: nil,
+                  model_name: "posts",
+                  attributes: {
+                    tags: have_attributes(collection: false, form: nil, model_name: nil),
+                    title: have_attributes(collection: false, form: nil, model_name: nil)
+                  }
+                ),
+                model_name: nil
+              ),
+              translations: have_attributes(
+                collection: false,
+                form: have_attributes(
+                  name: nil,
+                  model_name: "translation",
+                  attributes: {
+                    version: have_attributes(collection: false, form: nil, model_name: nil),
+                    singular: have_attributes(
+                      collection: false,
+                      form: have_attributes(
+                        name: nil,
+                        model_name: "singular",
+                        attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+                      ),
+                      model_name: "Dummy2"
+                    ),
+                    plural: have_attributes(
+                      collection: true,
+                      form: have_attributes(
+                        name: nil,
+                        model_name: "plural",
+                        attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+                      ),
+                      model_name: "Dummy2"
+                    ),
+                    en: have_attributes(
+                      collection: false,
+                      form: have_attributes(
+                        name: nil,
+                        model_name: "en",
+                        attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+                      ),
+                      model_name: nil
+                    ),
+                    "zh-CN": have_attributes(
+                      collection: false,
+                      form: have_attributes(
+                        name: nil,
+                        model_name: "zh-CN",
+                        attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+                      ),
+                      model_name: nil
+                    )
+                  }
+                ),
+                model_name: nil
+              )
+            }
           )
-        )
-        expect(DummyNamespace::MyForm::Translations.instance_methods(false))
-          .to include(:singular_attributes=, :plural_attributes=)
-        expect(DummyNamespace::MyForm::Translations::Singular.attributes).to match(
-          text: have_attributes(collection: false, form: nil, model_name: nil)
-        )
-        expect(DummyNamespace::MyForm::Translations::Plural.attributes).to match(
-          text: have_attributes(collection: false, form: nil, model_name: nil)
-        )
-        expect(DummyNamespace::MyForm::Translations::En.attributes).to match(
-          text: have_attributes(collection: false, form: nil, model_name: nil)
-        )
-        expect(DummyNamespace::MyForm::Translations::ZhCn.attributes).to match(
-          text: have_attributes(collection: false, form: nil, model_name: nil)
-        )
+          expect(form_class.attributes[:translations].form.instance_methods(false))
+            .to include(:singular_attributes=, :plural_attributes=)
+        end
+
+        context "when called twice with the same params" do
+          let(:form1) { form_class }
+          let(:form2) do
+            form_builder.build(
+              key_map: schema.key_map,
+              model_map: model_map,
+              **options
+            )
+          end
+
+          it "does not return the same class" do
+            expect(form1).not_to equal(form2)
+          end
+        end
       end
 
-      context "when called twice with the same params" do
-        let(:form1) { form_class }
-        let(:form2) do
-          form_builder.build(
-            key_map: schema.key_map,
-            namespace: namespace,
-            class_name: "MyForm",
-            model_map: {}
+      context "with namespace and class_name" do
+        let(:options) { { namespace: namespace, class_name: "MyForm" } }
+        let(:namespace) { stub_const("DummyNamespace", Module.new) }
+
+        it "defines attributes tree correctly" do
+          expect(form_class).to have_attributes(
+            name: "DummyNamespace::MyForm",
+            model_name: "DummyNamespace::MyForm",
+            attributes: {
+              name: have_attributes(collection: false, form: nil, model_name: "Dummy1"),
+              posts: have_attributes(collection: true, form: DummyNamespace::MyForm::Post, model_name: nil),
+              translations: have_attributes(collection: false,
+                form: DummyNamespace::MyForm::Translations, model_name: nil)
+            }
+          )
+          expect(DummyNamespace::MyForm::Post).to have_attributes(
+            name: "DummyNamespace::MyForm::Post",
+            model_name: "DummyNamespace::MyForm::Post",
+            attributes: {
+              tags: have_attributes(collection: false, form: nil, model_name: nil),
+              title: have_attributes(collection: false, form: nil, model_name: nil)
+            }
+          )
+          expect(DummyNamespace::MyForm::Translations).to have_attributes(
+            name: "DummyNamespace::MyForm::Translations",
+            model_name: "DummyNamespace::MyForm::Translations",
+            attributes: {
+              version: have_attributes(collection: false, form: nil, model_name: nil),
+              singular: have_attributes(
+                collection: false,
+                form: DummyNamespace::MyForm::Translations::Singular,
+                model_name: "Dummy2"
+              ),
+              plural: have_attributes(
+                collection: true,
+                form: DummyNamespace::MyForm::Translations::Plural,
+                model_name: "Dummy2"
+              ),
+              en: have_attributes(
+                collection: false,
+                form: DummyNamespace::MyForm::Translations::En,
+                model_name: nil
+              ),
+              "zh-CN": have_attributes(
+                collection: false,
+                form: DummyNamespace::MyForm::Translations::ZhCn,
+                model_name: nil
+              )
+            }
+          )
+          expect(DummyNamespace::MyForm::Translations.instance_methods(false))
+            .to include(:singular_attributes=, :plural_attributes=)
+          expect(DummyNamespace::MyForm::Translations::Singular).to have_attributes(
+            name: "DummyNamespace::MyForm::Translations::Singular",
+            model_name: "DummyNamespace::MyForm::Translations::Singular",
+            attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+          )
+          expect(DummyNamespace::MyForm::Translations::Plural).to have_attributes(
+            name: "DummyNamespace::MyForm::Translations::Plural",
+            model_name: "DummyNamespace::MyForm::Translations::Plural",
+            attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+          )
+          expect(DummyNamespace::MyForm::Translations::En).to have_attributes(
+            name: "DummyNamespace::MyForm::Translations::En",
+            model_name: "DummyNamespace::MyForm::Translations::En",
+            attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
+          )
+          expect(DummyNamespace::MyForm::Translations::ZhCn).to have_attributes(
+            name: "DummyNamespace::MyForm::Translations::ZhCn",
+            model_name: "DummyNamespace::MyForm::Translations::ZhCn",
+            attributes: { text: have_attributes(collection: false, form: nil, model_name: nil) }
           )
         end
 
-        it "does not redefine the constant" do
-          expect(form1).to equal(form2)
+        context "when called twice with the same params" do
+          let(:form1) { form_class }
+          let(:form2) do
+            form_builder.build(
+              key_map: schema.key_map,
+              model_map: model_map,
+              **options
+            )
+          end
+
+          it "does not redefine the constant" do
+            expect(form1).to equal(form2)
+          end
         end
       end
     end

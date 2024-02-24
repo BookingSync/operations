@@ -20,6 +20,9 @@
 #
 # @see Operations::Form::Builder
 class Operations::Form::Base
+  BUILD_ASSOCIATION_PREFIX = %r{\Abuild_}.freeze
+  NESTED_ATTRIBUTES_WRITER_SUFFIX = %r{_attributes=\z}.freeze
+
   # :nodoc:
   module ClassMethods
     def self.extended(base)
@@ -40,8 +43,14 @@ class Operations::Form::Base
         ),
         default: proc { {} },
         reader: :private
+      base.option :operation_result, default: proc {}
 
       base.class_attribute :attributes, instance_accessor: false, default: {}
+      base.class_attribute :primary_key, instance_accessor: false, default: :id
+
+      base.define_method :initialize do |*args, **kwargs|
+        args.empty? && kwargs.present? ? super(kwargs, **{}) : super(*args, **kwargs)
+      end
     end
 
     def attribute(name, **options)
@@ -63,6 +72,12 @@ class Operations::Form::Base
     def validators_on(name)
       attributes[name.to_sym]&.model_validators || []
     end
+
+    def model_name
+      @model_name ||= ActiveModel::Name.new(self)
+    end
+
+    def reflect_on_association(...); end
   end
 
   # :nodoc:
@@ -91,23 +106,43 @@ class Operations::Form::Base
       end
     end
 
-    def method_missing(name, *)
-      read_attribute(name)
+    # For now we gracefully return nil for unknown methods
+    def method_missing(name, *args, **kwargs)
+      build_attribute_name = build_attribute_name(name)
+      build_attribute = self.class.attributes[build_attribute_name]
+      plural_build_attribute = self.class.attributes[build_attribute_name.to_s.pluralize.to_sym]
+
+      if has_attribute?(name)
+        read_attribute(name)
+      elsif build_attribute&.form
+        build_attribute.form.new(*args, **kwargs)
+      elsif plural_build_attribute&.form
+        plural_build_attribute.form.new(*args, **kwargs)
+      end
     end
 
     def respond_to_missing?(name, *)
-      self.class.attributes.key?(name)
+      has_attribute?(name) ||
+        build_nested_form?(build_attribute_name(name)) ||
+        self.class.attributes[nested_attribute_name(name)]&.form
     end
 
     def model_name
-      ActiveModel::Name.new(self.class)
+      self.class.model_name
     end
 
-    # This should return false if we want to use POST.
-    # Now it is going to generate PATCH form.
     def persisted?
-      true
+      !has_attribute?(self.class.primary_key) || read_attribute(self.class.primary_key).present?
     end
+
+    def new_record?
+      !persisted?
+    end
+
+    def _destroy
+      Operations::Types::Params::Bool.call(read_attribute(:_destroy)) { false }
+    end
+    alias_method :marked_for_destruction?, :_destroy
 
     # Probably can be always nil, it is used in automated URL derival.
     # We can make it work later but it will require additional concepts.
@@ -143,6 +178,7 @@ class Operations::Form::Base
         end
       end
     end
+    alias_method :read_attribute_for_validation, :read_attribute
 
     def to_hash
       {
@@ -207,6 +243,19 @@ class Operations::Form::Base
       else
         data
       end
+    end
+
+    def build_attribute_name(name)
+      name.to_s.sub(BUILD_ASSOCIATION_PREFIX, "").to_sym if name.to_s.match?(BUILD_ASSOCIATION_PREFIX)
+    end
+
+    def nested_attribute_name(name)
+      name.to_s.sub(NESTED_ATTRIBUTES_WRITER_SUFFIX, "").to_sym if name.to_s.match?(NESTED_ATTRIBUTES_WRITER_SUFFIX)
+    end
+
+    def build_nested_form?(name)
+      !!(self.class.attributes[name]&.form ||
+        self.class.attributes[name.to_s.pluralize.to_sym]&.form)
     end
   end
 
