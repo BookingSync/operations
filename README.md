@@ -262,7 +262,7 @@ end
 
 The operation body can be any callable object (respond to the `call` method), even a lambda. But it is always better to define it as a class since there might be additional instance methods and [dependency injections](#dependency-injection).
 
-In any event, the operation body should return a Dry::Monad::Result instance. In case of a Failure, it will be converted into an `Operation::Result#error` and in case of Success(), its content will be merged into the operation context.
+In any event, the operation body should return a Dry::Monads::Result instance. In case of a Failure, it will be converted into an `Operation::Result#error` and in case of Success(), its content will be merged into the operation context.
 
 **Important:** since the Success result payload is merged inside of a context, it is supposed to be a hash.
 
@@ -305,7 +305,7 @@ end
 
 Dependency injection can be used to provide IO clients with the operation. It could be DB repositories or API clients. The best way is to use Dry::Initializer for it since it provides the ability to define acceptable types.
 
-If you still prefer to use ActiveRecord, it is worth creating a wrapper around it providing Dry::Monad-compatible interfaces.
+If you still prefer to use ActiveRecord, it is worth creating a wrapper around it providing Dry::Monads-compatible interfaces.
 
 ```ruby
 class ActiveRecordRepository

@@ -44,7 +44,8 @@ RSpec.describe Operations::Form::Builder do
         end
       end
       let(:namespace) { stub_const("DummyNamespace", Module.new) }
-      let(:model_map) { { ["name"] => "Dummy1", ["translations", %r{singular|plural}] => "Dummy2" } }
+      let(:model_map_hash) { { ["name"] => "Dummy1", ["translations", %r{singular|plural}] => "Dummy2" } }
+      let(:model_map) { Operations::Form::DeprecatedLegacyModelMapImplementation.new(model_map_hash) }
 
       it "defines attributes tree correctly" do
         expect(form_class).to be < base_class
@@ -104,7 +105,7 @@ RSpec.describe Operations::Form::Builder do
             key_map: schema.key_map,
             namespace: namespace,
             class_name: "MyForm",
-            model_map: {}
+            model_map: nil
           )
         end
 
