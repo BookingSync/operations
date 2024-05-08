@@ -979,7 +979,7 @@ end
 
 # And this will transform nested attributes hash from the form to an array acceptable by the operation:
 # from
-#   `{ id: 42, sections: { '0' => { id: 1, content: "First paragraph" }, 'new' => { content: 'New Paragraph' } } }`
+#   `{ id: 42, sections_attributes: { '0' => { id: 1, content: "First paragraph" }, 'new' => { content: 'New Paragraph' } } }`
 # into
 #   `{ id: 42, sections: [{ id: 1, content: "First paragraph" }, { content: 'New Paragraph' }] }`
 class NestedAttributes

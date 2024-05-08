@@ -20,8 +20,8 @@
 #
 # @see Operations::Form::Builder
 class Operations::Form::Base
-  BUILD_ASSOCIATION_PREFIX = %r{\Abuild_}.freeze
-  NESTED_ATTRIBUTES_WRITER_SUFFIX = %r{_attributes=\z}.freeze
+  BUILD_ASSOCIATION_PREFIX = "build_"
+  NESTED_ATTRIBUTES_SUFFIX = "_attributes="
 
   # :nodoc:
   module ClassMethods
@@ -246,11 +246,11 @@ class Operations::Form::Base
     end
 
     def build_attribute_name(name)
-      name.to_s.sub(BUILD_ASSOCIATION_PREFIX, "").to_sym if name.to_s.match?(BUILD_ASSOCIATION_PREFIX)
+      name.to_s.delete_prefix(BUILD_ASSOCIATION_PREFIX).to_sym if name.to_s.start_with?(BUILD_ASSOCIATION_PREFIX)
     end
 
     def nested_attribute_name(name)
-      name.to_s.sub(NESTED_ATTRIBUTES_WRITER_SUFFIX, "").to_sym if name.to_s.match?(NESTED_ATTRIBUTES_WRITER_SUFFIX)
+      name.to_s.delete_suffix(NESTED_ATTRIBUTES_SUFFIX).to_sym if name.to_s.end_with?(NESTED_ATTRIBUTES_SUFFIX)
     end
 
     def build_nested_form?(name)
