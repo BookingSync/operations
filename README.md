@@ -939,7 +939,7 @@ class Post::Update::ModelMap
 end
 ```
 
-In forms, params imput is already transformed to extract the nested data with the form name. `form_for @post_update_form` will generate the form that send params nested under the `params[:post_update_form]` key. By default operation forms extract this form data and send it to the operation at the top level, so `{ id: 42, post_update_form: { title: "Post Title" } }` params will be sent to the operation as `{ id: 42, title: "Post Title" }`. Strong params are also accepted by the form, though they are being converted with `to_unsafe_hash`.
+In forms, params input is already transformed to extract the nested data with the form name. `form_for @post_update_form` will generate the form that send params nested under the `params[:post_update_form]` key. By default operation forms extract this form data and send it to the operation at the top level, so `{ id: 42, post_update_form: { title: "Post Title" } }` params will be sent to the operation as `{ id: 42, title: "Post Title" }`. Strong params are also accepted by the form, though they are being converted with `to_unsafe_hash`.
 
 It is possible to add more params transfomations to the form in cases when operation contract is different from the params structure:
 
