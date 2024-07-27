@@ -31,12 +31,12 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "database_cleaner-active_record"
   spec.add_development_dependency "sqlite3", "~> 1.4"
 
-  spec.add_runtime_dependency "activerecord", ">= 5.2.0"
-  spec.add_runtime_dependency "activesupport", ">= 5.2.0"
-  spec.add_runtime_dependency "after_commit_everywhere"
-  spec.add_runtime_dependency "dry-monads"
-  spec.add_runtime_dependency "dry-struct"
-  spec.add_runtime_dependency "dry-validation"
+  spec.add_dependency "activerecord", ">= 5.2.0"
+  spec.add_dependency "activesupport", ">= 5.2.0"
+  spec.add_dependency "after_commit_everywhere"
+  spec.add_dependency "dry-monads"
+  spec.add_dependency "dry-struct"
+  spec.add_dependency "dry-validation"
   spec.metadata = {
     "rubygems_mfa_required" => "true"
   }
