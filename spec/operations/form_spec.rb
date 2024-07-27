@@ -54,6 +54,19 @@ RSpec.describe Operations::Form do
       expect(build.errors.to_hash).to be_empty
     end
 
+    context "when model_map and hydrator are missing" do
+      let(:default_options) { {} }
+
+      specify do
+        expect(build).to be_a(Operations::Form::Base) & have_attributes(
+          entities: [],
+          name: nil,
+          attributes: { entities: [], name: nil }
+        )
+        expect(build.errors.to_hash).to be_empty
+      end
+    end
+
     context "when params are given" do
       let(:params) do
         double(to_unsafe_hash: {
@@ -106,6 +119,19 @@ RSpec.describe Operations::Form do
       expect(persist.errors.to_hash).to eq({ entities: ["is missing"] })
     end
 
+    context "when model_map and hydrator are missing" do
+      let(:default_options) { {} }
+
+      specify do
+        expect(persist).to be_a(Operations::Form::Base) & have_attributes(
+          entities: [],
+          name: nil,
+          attributes: { entities: [], name: nil }
+        )
+        expect(persist.errors.to_hash).to eq({ entities: ["is missing"] })
+      end
+    end
+
     context "when params are given" do
       let(:params) { { entities: [{ "id" => 42 }], "dummy_form" => { alias_name: "Superman" } } }
 
@@ -137,6 +163,10 @@ RSpec.describe Operations::Form do
     specify do
       expect(pretty_inspect.gsub(%r{Proc:0x[^>]+}, "Proc:0x")).to eq(<<~INSPECT)
         #<Operations::Form
+         model_name="dummy_operation_form",
+         model_map=#<Proc:0x>,
+         params_transformations=[],
+         hydrator=#<Proc:0x>,
          form_class=#<Class
            attributes={:entities=>
               #<Operations::Form::Attribute
@@ -155,10 +185,7 @@ RSpec.describe Operations::Form do
                name=:name,
                collection=false,
                model_name="DummyModel",
-               form=nil>}>,
-         model_map=#<Proc:0x>,
-         params_transformations=[],
-         hydrator=#<Proc:0x>>
+               form=nil>}>>
       INSPECT
     end
   end
