@@ -262,7 +262,7 @@ end
 
 The operation body can be any callable object (respond to the `call` method), even a lambda. But it is always better to define it as a class since there might be additional instance methods and [dependency injections](#dependency-injection).
 
-In any event, the operation body should return a Dry::Monad::Result instance. In case of a Failure, it will be converted into an `Operation::Result#error` and in case of Success(), its content will be merged into the operation context.
+In any event, the operation body should return a Dry::Monads::Result instance. In case of a Failure, it will be converted into an `Operation::Result#error` and in case of Success(), its content will be merged into the operation context.
 
 **Important:** since the Success result payload is merged inside of a context, it is supposed to be a hash.
 
@@ -305,7 +305,7 @@ end
 
 Dependency injection can be used to provide IO clients with the operation. It could be DB repositories or API clients. The best way is to use Dry::Initializer for it since it provides the ability to define acceptable types.
 
-If you still prefer to use ActiveRecord, it is worth creating a wrapper around it providing Dry::Monad-compatible interfaces.
+If you still prefer to use ActiveRecord, it is worth creating a wrapper around it providing Dry::Monads-compatible interfaces.
 
 ```ruby
 class ActiveRecordRepository
@@ -858,31 +858,38 @@ While we normally recommend using frontend-backend separation, it is still possi
 ```ruby
 class PostsController < ApplicationController
   def edit
-    @post_update = Post::Update.default.callable(
-      { post_id: params[:id] },
-      current_user: current_user
-    )
+    @post_update_form = Post::Update.default_form.build(params, current_user: current_user)
 
-    respond_with @post_update
+    respond_with @post_update_form
   end
 
   def update
-    # With operations we don't need strong parameters as the operation contract takes care of this.
-    @post_update = Post::Update.default.call(
-      { **params[:post_update_default_form], post_id: params[:id] },
-      current_user: current_user
-    )
+    @post_update_form = Post::Update.default_form.persist(params, current_user: current_user)
 
-    respond_with @post_update, location: edit_post_url(@post_update.context[:post])
+    respond_with @post_update_form, location: edit_post_url(@post_update_form.operation_result.context[:post])
   end
 end
 ```
 
-The key here is to use `Operations::Result#form` method for the form builder.
+Where the form class is defined this way:
+
+```ruby
+class Post::Update
+  def self.default
+    @default ||= Operations::Command.new(...)
+  end
+
+  def self.default_form
+    @default_form ||= Operations::Form.new(default)
+  end
+end
+```
+
+Then, the form can be used as any other form object:
 
 ```erb
 # views/posts/edit.html.erb
-<%= form_for @post_update.form, url: post_url(@post_update.context[:post]), method: :patch do |f| %>
+<%= form_for @post_update_form, url: post_url(@post_update_form.operation_result.context[:post]) do |f| %>
   <%= f.input :title %>
   <%= f.text_area :body %>
 <% end %>
@@ -892,16 +899,16 @@ In cases when we need to populate the form data, it is possible to pass `form_hy
 
 ```ruby
 class Post::Update
-  def self.default
-    @default ||= Operations::Command.new(
-      ...,
-      form_hydrator: Post::Update::Hydrator.new
+  def self.default_form
+    @default_form ||= Operations::Form.new(
+      default,
+      hydrator: Post::Update::Hydrator.new
     )
   end
 end
 
 class Post::Update::Hydrator
-  def call(form_class, params, post:, **)
+  def call(form_class, params, post:, **_context)
     value_attributes = form_class.attributes.keys - %i[post_id]
     data = value_attributes.index_with { |name| post.public_send(name) }
 
@@ -912,23 +919,80 @@ end
 
 The general idea here is to figure out attributes we have in the contract (those attributes are also defined automatically in a generated form class) and then fetch those attributes from the model and merge them with the params provided within the request.
 
-Also, in the case of, say, [simple_form](https://github.com/heartcombo/simple_form), we need to provide additional attributes information, like data type. It is possible to do this with an optional `form_model_map:` operation option:
+Also, in the case of, say, [simple_form](https://github.com/heartcombo/simple_form), we need to provide additional attributes information, like data type. It is possible to do this with `model_map:` option:
 
 ```ruby
 class Post::Update
-  def self.default
-    @default ||= Operations::Command.new(
-      ...,
-      form_hydrator: Post::Update::Hydrator.new,
-      form_model_map: {
-        [%r{.+}] => "Post"
-      }
+  def self.default_form
+    @default_form ||= Operations::Form.new(
+      default,
+      model_map: Post::Update::ModelMap.new,
+      hydrator: Post::Update::Hydrator.new
     )
+  end
+end
+
+class Post::Update::ModelMap
+  def call(_path)
+    Post
   end
 end
 ```
 
-Here we define all the fields mapping to a model class with a regexp or just string values.
+In forms, params input is already transformed to extract the nested data with the form name. `form_for @post_update_form` will generate the form that send params nested under the `params[:post_update_form]` key. By default operation forms extract this form data and send it to the operation at the top level, so `{ id: 42, post_update_form: { title: "Post Title" } }` params will be sent to the operation as `{ id: 42, title: "Post Title" }`. Strong params are also accepted by the form, though they are being converted with `to_unsafe_hash`.
+
+It is possible to add more params transfomations to the form in cases when operation contract is different from the params structure:
+
+```ruby
+class Post::Update
+  def self.default_form
+    @default_form ||= Operations::Form.new(
+      default,
+      model_name: "post_update_form", # form name can be customized
+      params_transformations: [
+        ParamsMap.new(id: :post_id),
+        NestedAttributes.new(:sections)
+      ]
+    )
+  end
+
+  contract do
+    required(:post_id).filled(:integer)
+    optional(:title).filled(:string)
+    optional(:sections).array(:hash) do
+      optional(:id).filled(:integer)
+      optional(:content).filled(:string)
+      optional(:_destroy).filled(:bool)
+    end
+  end
+end
+
+# This will transform `{ id: 42, title: "Post Title" }` params to `{ post_id: 42, title: "Post Title" }`
+class ParamsMap
+  extend Dry::Initializer
+
+  param :params_map
+
+  def call(_form_class, params, **_context)
+    params.transform_keys { |key| params_map[key] || key }
+  end
+end
+
+# And this will transform nested attributes hash from the form to an array acceptable by the operation:
+# from
+#   `{ id: 42, sections_attributes: { '0' => { id: 1, content: "First paragraph" }, 'new' => { content: 'New Paragraph' } } }`
+# into
+#   `{ id: 42, sections: [{ id: 1, content: "First paragraph" }, { content: 'New Paragraph' }] }`
+class NestedAttributes
+  extend Dry::Initializer
+
+  param :name, Types::Coercible::Symbol
+
+  def call(_form_class, params, **_context)
+    params[name] = params[:"#{name}_attrbutes"].values
+  end
+end
+```
 
 ## Development
 

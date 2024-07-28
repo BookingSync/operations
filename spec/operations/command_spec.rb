@@ -1008,8 +1008,29 @@ RSpec.describe Operations::Command do
     subject(:pretty_inspect) { command.pretty_inspect }
 
     specify do
-      expect(pretty_inspect)
-        .to match(%r{\A#<Operations::Command\n operation=[^,]+,\n contract=[^,]+,\n policies=[^,]+,\n})
+      expect(pretty_inspect.gsub(%r{Proc:0x[^>]+}, "Proc:0x").gsub(%r{Class:0x[^>]+}, "Class:0x")).to eq(<<~INSPECT)
+        #<Operations::Command
+         operation=#<Proc:0x>,
+         contract=#<#<Class:0x> schema=#<Dry::Schema::Processor keys=[:name] rules={:name=>"key?(:name) \
+        AND key[name](str? AND filled?)"}> rules=[#<Dry::Validation::Rule keys=[]>]>,
+         policies=[#<Proc:0x>],
+         idempotency=[],
+         preconditions=[#<Proc:0x>],
+         on_success=[#<Proc:0x>],
+         on_failure=[#<Proc:0x>],
+         form_model_map={},
+         form_base=#<Class attributes={}>,
+         form_class=#<Class
+           attributes={:name=>
+              #<Operations::Form::Attribute
+               name=:name,
+               collection=false,
+               model_name=nil,
+               form=nil>}>,
+         form_hydrator=#<Proc:0x>,
+         configuration=#<Operations::Configuration info_reporter=nil \
+        error_reporter=#<Proc:0x> transaction=#<Proc:0x> after_commit=#<Proc:0x>>>
+      INSPECT
     end
   end
 end

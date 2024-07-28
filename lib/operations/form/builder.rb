@@ -11,35 +11,46 @@ class Operations::Form::Builder
 
   option :base_class, Operations::Types::Instance(Class)
 
-  def build(key_map:, model_map:, namespace: nil, class_name: nil)
+  def build(key_map:, model_map:, namespace: nil, class_name: nil, model_name: nil)
     return namespace.const_get(class_name) if namespace && class_name && namespace.const_defined?(class_name)
 
-    traverse(key_map, model_map, namespace, class_name, [])
+    traverse(key_map, model_map, namespace, class_name, model_name, [])
   end
 
   private
 
-  def traverse(key_map, model_map, namespace, class_name, path)
+  def traverse(key_map, model_map, namespace, class_name, model_name, path)
     form = Class.new(base_class)
-    namespace.const_set(class_name, form) if namespace && class_name
+    namespace.const_set(class_name, form) if namespace&.name && class_name
+    define_model_name(form, model_name) if model_name && !form.name
 
-    key_map.each do |key|
-      key_path = path + [key.name]
-
-      case key
-      when Dry::Schema::Key::Array
-        nested_form = traverse(key.member, model_map, form, key.name.to_s.underscore.classify, key_path)
-        form.attribute(key.name, form: nested_form, collection: true, **model_name(model_map, key_path))
-      when Dry::Schema::Key::Hash
-        traverse_hash(form, model_map, key, path)
-      when Dry::Schema::Key
-        form.attribute(key.name, **model_name(model_map, key_path))
-      else
-        raise "Unknown key_map key: #{key.class}"
-      end
-    end
-
+    key_map.each { |key| define_attribute(form, model_map, key, path) }
     form
+  end
+
+  def define_model_name(form, model_name)
+    form.define_singleton_method :model_name do
+      @model_name ||= ActiveModel::Name.new(self, nil, model_name)
+    end
+  end
+
+  def define_attribute(form, model_map, key, path)
+    case key
+    when Dry::Schema::Key::Array
+      traverse_array(form, model_map, key, path)
+    when Dry::Schema::Key::Hash
+      traverse_hash(form, model_map, key, path)
+    when Dry::Schema::Key
+      form.attribute(key.name, model_name: model_map&.call(path + [key.name]))
+    else
+      raise "Unknown key_map key: #{key.class}"
+    end
+  end
+
+  def traverse_array(form, model_map, key, path)
+    key_path = path + [key.name]
+    nested_form = traverse(key.member, model_map, form, key.name.to_s.underscore.classify, key.name.to_s, key_path)
+    form.attribute(key.name, form: nested_form, collection: true, model_name: model_map&.call(key_path))
   end
 
   def traverse_hash(form, model_map, hash_key, path)
@@ -55,8 +66,8 @@ class Operations::Form::Builder
     form.define_method :"#{hash_key.name}=", proc { |attributes| attributes } if nested_attributes_suffix
 
     key_path = path + [name]
-    nested_form = traverse(members, model_map, form, name.underscore.camelize, key_path)
-    form.attribute(name, form: nested_form, collection: collection, **model_name(model_map, key_path))
+    nested_form = traverse(members, model_map, form, name.underscore.camelize, name.to_s.singularize, key_path)
+    form.attribute(name, form: nested_form, collection: collection, model_name: model_map&.call(key_path))
   end
 
   def specify_form_attributes(hash_key, nested_attributes_suffix, nested_attributes_collection)
@@ -66,20 +77,6 @@ class Operations::Form::Builder
       [hash_key.name.gsub(NESTED_ATTRIBUTES_SUFFIX, ""), hash_key.members.first.members, true]
     else
       [hash_key.name, hash_key.members, false]
-    end
-  end
-
-  def model_name(model_map, path)
-    _, model_name = model_map.find do |pathspec, _model|
-      path.size == pathspec.size && path.zip(pathspec).all? do |slug, pattern|
-        pattern.is_a?(Regexp) ? pattern.match?(slug) : slug == pattern
-      end
-    end
-
-    if model_name
-      { model_name: model_name }
-    else
-      {}
     end
   end
 end

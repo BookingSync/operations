@@ -1,6 +1,15 @@
 # Changelog
 
-## [0.6.3](https://github.com/BookingSync/operations/tree/main)
+## [0.7.0](https://github.com/BookingSync/operations/tree/main)
+
+### Added
+
+- Implement new forms system detaching it from operations [\#47](https://github.com/BookingSync/operations/pull/47) ([pyromaniac](https://github.com/pyromaniac))
+
+### Improvements
+
+- Better inspect for all the opjects [\#45](https://github.com/BookingSync/operations/pull/45) ([pyromaniac](https://github.com/pyromaniac))
+- Use #to_hash instead of #as_json [\#44](https://github.com/BookingSync/operations/pull/44) ([pyromaniac](https://github.com/pyromaniac))
 
 ### Fixes
 
