@@ -926,8 +926,8 @@ class Post::Update
   def self.default_form
     @default_form ||= Operations::Form.new(
       default,
-      hydrator: Post::Update::Hydrator.new,
-      model_map: Post::Update::ModelMap.new
+      model_map: Post::Update::ModelMap.new,
+      hydrator: Post::Update::Hydrator.new
     )
   end
 end
@@ -948,6 +948,7 @@ class Post::Update
   def self.default_form
     @default_form ||= Operations::Form.new(
       default,
+      model_name: "post_update_form", # form name can be customized
       params_transformations: [
         ParamsMap.new(id: :post_id),
         NestedAttributes.new(:sections)

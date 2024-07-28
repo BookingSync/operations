@@ -3,6 +3,11 @@
 # Traverses the passed {Dry::Schema::KeyMap} and generates
 # {Operations::Form::Base} classes on the fly. Handles nested structures.
 #
+# This class will be removed along with Operations::Command#form_model_map
+# option removal along with the rest of form-related stuff.
+#
+# Don't use this class in you code, instead, copy it and modify to you liking.
+#
 # @see Operations::Form::Base
 class Operations::Form::DeprecatedLegacyModelMapImplementation
   extend Dry::Initializer

@@ -1,6 +1,24 @@
 # frozen_string_literal: true
 
 # Configures and defines a form object factory.
+# Forms can be defined on top of commants and used in the user-facing controllers.
+# Form objects are Rails-specific and support everything that is needed for Rails'
+# form rendering helpers. They are designed to replace direct usage of ActiveRecord
+# models in controllers and views and act as an integration bridge from Rails
+# application to the Operations framework.
+#
+# @example
+#
+#   command = Operations::Command.new(...)
+#   form = Operations::Form.new(command)
+#
+#   @form_object = form.build(params)
+#
+#   form_for @form_object, url: ...
+#
+#   @form_object = form.persist(params)
+#   respond_with @form_object
+#
 class Operations::Form
   include Dry::Core::Constants
   include Dry::Equalizer(:command, :model_map, :params_transformations, :hydrator, :form_class)
