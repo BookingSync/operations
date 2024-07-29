@@ -47,6 +47,7 @@ class Operations::Form::Base
 
       base.class_attribute :attributes, instance_accessor: false, default: {}
       base.class_attribute :primary_key, instance_accessor: false, default: :id
+      base.class_attribute :persisted, instance_accessor: false, default: nil
 
       base.define_method :initialize do |*args, **kwargs|
         args.empty? && kwargs.present? ? super(kwargs, **{}) : super(*args, **kwargs)
@@ -132,7 +133,7 @@ class Operations::Form::Base
     end
 
     def persisted?
-      !has_attribute?(self.class.primary_key) || read_attribute(self.class.primary_key).present?
+      self.class.persisted.nil? ? read_attribute(self.class.primary_key).present? : self.class.persisted
     end
 
     def new_record?

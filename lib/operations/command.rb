@@ -387,7 +387,8 @@ class Operations::Command
         key_map: contract.class.schema.key_map,
         model_map: Operations::Form::DeprecatedLegacyModelMapImplementation.new(form_model_map),
         namespace: operation.class,
-        class_name: form_class_name
+        class_name: form_class_name,
+        persisted: true
       )
   end
 

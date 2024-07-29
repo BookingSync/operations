@@ -54,11 +54,12 @@ RSpec.describe Operations::Form do
       expect(build.errors.to_hash).to be_empty
     end
 
-    context "when model_map and hydrator are missing" do
-      let(:default_options) { {} }
+    context "when model_map and hydrator are missing but persisted is false" do
+      let(:options) { { persisted: false } }
 
       specify do
         expect(build).to be_a(Operations::Form::Base) & have_attributes(
+          persisted?: false,
           entities: [],
           name: nil,
           attributes: { entities: [], name: nil }
@@ -76,6 +77,7 @@ RSpec.describe Operations::Form do
 
       specify do
         expect(build).to be_a(Operations::Form::Base) & have_attributes(
+          persisted?: true,
           entities: [be_a(Operations::Form::Base) & have_attributes(
             id: 42,
             attributes: { id: 42 },
@@ -119,11 +121,12 @@ RSpec.describe Operations::Form do
       expect(persist.errors.to_hash).to eq({ entities: ["is missing"] })
     end
 
-    context "when model_map and hydrator are missing" do
-      let(:default_options) { {} }
+    context "when model_map and hydrator are missing but persisted is false" do
+      let(:options) { { persisted: false } }
 
       specify do
         expect(persist).to be_a(Operations::Form::Base) & have_attributes(
+          persisted?: false,
           entities: [],
           name: nil,
           attributes: { entities: [], name: nil }
@@ -137,6 +140,7 @@ RSpec.describe Operations::Form do
 
       specify do
         expect(persist).to be_a(Operations::Form::Base) & have_attributes(
+          persisted?: true,
           entities: [be_a(Operations::Form::Base) & have_attributes(
             id: 42,
             attributes: { id: 42 },
@@ -165,6 +169,7 @@ RSpec.describe Operations::Form do
         #<Operations::Form
          model_name="dummy_operation_form",
          model_map=#<Proc:0x>,
+         persisted=true,
          params_transformations=[],
          hydrator=#<Proc:0x>,
          form_class=#<Class

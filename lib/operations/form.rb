@@ -21,8 +21,8 @@
 #
 class Operations::Form
   include Dry::Core::Constants
-  include Dry::Equalizer(:command, :model_map, :params_transformations, :hydrator, :form_class)
-  include Operations::Inspect.new(:model_name, :model_map, :params_transformations, :hydrator, :form_class)
+  include Dry::Equalizer(:command, :model_map, :persisted, :params_transformations, :hydrator, :form_class)
+  include Operations::Inspect.new(:model_name, :model_map, :persisted, :params_transformations, :hydrator, :form_class)
 
   # We need to make deprecated inheritance from Operations::Form act exactly the
   # same way as from Operations::Form::Base. In order to do this, we are encapsulating all the
@@ -48,6 +48,7 @@ class Operations::Form
     param :command, type: Operations::Types.Interface(:operation, :contract, :call)
     option :model_name, type: Operations::Types::String.optional, default: proc {}, reader: false
     option :model_map, type: Operations::Types.Interface(:call).optional, default: proc {}
+    option :persisted, type: Operations::Types::Bool, default: proc { true }
     option :params_transformations, type: Operations::Types::Coercible::Array.of(Operations::Types.Interface(:call)),
       default: proc { [] }
     option :hydrator, type: Operations::Types.Interface(:call).optional, default: proc {}
@@ -64,7 +65,7 @@ class Operations::Form
 
   def form_class
     @form_class ||= Operations::Form::Builder.new(base_class: base_class)
-      .build(key_map: key_map, model_map: model_map, model_name: model_name)
+      .build(key_map: key_map, model_map: model_map, model_name: model_name, persisted: persisted)
   end
 
   private

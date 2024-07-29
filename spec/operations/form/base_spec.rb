@@ -9,6 +9,8 @@ RSpec.describe Operations::Form::Base do
       local_post_class = post_class
 
       Class.new(form_base) do
+        self.persisted = true
+
         attribute :name
         attribute :tags, collection: true
         attribute :author, form: local_author_class

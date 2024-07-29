@@ -1,10 +1,16 @@
 # Changelog
 
-## [0.7.0](https://github.com/BookingSync/operations/tree/main)
+## [0.7.1](https://github.com/BookingSync/operations/tree/main)
 
 ### Added
 
-- Implement new forms system detaching it from operations [\#47](https://github.com/BookingSync/operations/pull/47) ([pyromaniac](https://github.com/pyromaniac))
+- Added `persisted:` option to the new forms definition. [\#48](https://github.com/BookingSync/operations/pull/48) ([pyromaniac](https://github.com/pyromaniac))
+
+## [0.7.0](https://github.com/BookingSync/operations/tree/v0.7.0)
+
+### Added
+
+- Implement new forms system detaching it from operations. Please check [UPGRADING_FORMS.md](UPGRADING_FORMS.md) for more details. [\#47](https://github.com/BookingSync/operations/pull/47) ([pyromaniac](https://github.com/pyromaniac))
 
 ### Improvements
 
@@ -15,7 +21,7 @@
 
 - In some cases, `Operation::Command#form_class` was evaluated before `form_base` was evaluated [\#41](https://github.com/BookingSync/operations/pull/41) ([pyromaniac](https://github.com/pyromaniac))
 
-## [0.6.2]
+## [0.6.3](https://github.com/BookingSync/operations/tree/v0.6.3)
 
 ### Added
 

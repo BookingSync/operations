@@ -853,6 +853,8 @@ In this case, `Order::MarkAsCompleted.system.call(...)` will be used in, say, co
 
 ### Form objects
 
+Form objects were refactored to be separate from Command. Please check [UPGRADING_FORMS.md](UPGRADING_FORMS.md) for more details.
+
 While we normally recommend using frontend-backend separation, it is still possible to use this framework with Rails view helpers:
 
 ```ruby
@@ -885,7 +887,7 @@ class Post::Update
 end
 ```
 
-Then, the form can be used as any other form object:
+Then, the form can be used as any other form object. Unfortunately, there is no way to figure out the correct route for the operation form object, so it have to be provided manually:
 
 ```erb
 # views/posts/edit.html.erb
@@ -939,7 +941,18 @@ class Post::Update::ModelMap
 end
 ```
 
-In forms, params input is already transformed to extract the nested data with the form name. `form_for @post_update_form` will generate the form that send params nested under the `params[:post_update_form]` key. By default operation forms extract this form data and send it to the operation at the top level, so `{ id: 42, post_update_form: { title: "Post Title" } }` params will be sent to the operation as `{ id: 42, title: "Post Title" }`. Strong params are also accepted by the form, though they are being converted with `to_unsafe_hash`.
+In forms, params input is already transformed to extract the nested data with the form name. `form_for @post_update_form` will generate the form that send params nested under the `params[:post_update_form]` key. By default operation forms extract this form data and send it to the operation at the top level, so `{ id: 42, post_update_form: { title: "Post Title" } }` params will be sent to the operation as `{ id: 42, title: "Post Title" }`. Strong params are also accepted by the form, though they are being converted with `to_unsafe_hash`. Though the form name can be customized if necessary:
+
+```ruby
+class Post::Update
+  def self.default_form
+    @default_form ||= Operations::Form.new(
+      default,
+      model_name: "custom_post_update_form", # form name can be customized
+    )
+  end
+end
+```
 
 It is possible to add more params transfomations to the form in cases when operation contract is different from the params structure:
 
@@ -948,7 +961,6 @@ class Post::Update
   def self.default_form
     @default_form ||= Operations::Form.new(
       default,
-      model_name: "post_update_form", # form name can be customized
       params_transformations: [
         ParamsMap.new(id: :post_id),
         NestedAttributes.new(:sections)
@@ -993,6 +1005,21 @@ class NestedAttributes
   end
 end
 ```
+
+By default, the top-level form objects instantiated from the form will have `persisted?` flag set to `true`. This will result the form to use the `PATCH` werb like for any persisted AR object. If it is required to generate a form with the `POST` verb in case of operation, say, creating some objects, this default behavior can be customised:
+
+```ruby
+class Post::Create
+  def self.default_form
+    @default_form ||= Operations::Form.new(
+      default,
+      persisted: false
+    )
+  end
+end
+```
+
+Note that operation itself is agnostic to the persistence layer, so there is no way for it to figure out this semanticsa automatically.
 
 ## Development
 
