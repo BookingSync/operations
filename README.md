@@ -904,7 +904,7 @@ class Post::Update
   def self.default_form
     @default_form ||= Operations::Form.new(
       default,
-      hydrator: Post::Update::Hydrator.new
+      hydrators: [Post::Update::Hydrator.new]
     )
   end
 end
@@ -912,9 +912,7 @@ end
 class Post::Update::Hydrator
   def call(form_class, params, post:, **_context)
     value_attributes = form_class.attributes.keys - %i[post_id]
-    data = value_attributes.index_with { |name| post.public_send(name) }
-
-    data.merge!(params)
+    value_attributes.index_with { |name| post.public_send(name) }
   end
 end
 ```
@@ -929,7 +927,7 @@ class Post::Update
     @default_form ||= Operations::Form.new(
       default,
       model_map: Post::Update::ModelMap.new,
-      hydrator: Post::Update::Hydrator.new
+      hydrators: [Post::Update::Hydrator.new]
     )
   end
 end

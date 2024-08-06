@@ -50,7 +50,13 @@ class Operations::Form::Base
       base.class_attribute :persisted, instance_accessor: false, default: nil
 
       base.define_method :initialize do |*args, **kwargs|
-        args.empty? && kwargs.present? ? super(kwargs, **{}) : super(*args, **kwargs)
+        if args.empty?
+          # Initializing Operations::Form::Base instance
+          super(kwargs, **{})
+        else
+          # Initializing Operations::Form instance as form object (deprecated)
+          super(*args, **kwargs)
+        end
       end
     end
 

@@ -197,6 +197,11 @@ class Operations::Command
     result_policies = policies_sum - [Undefined] unless policies_sum == [Undefined, Undefined]
     options[:policies] = result_policies if result_policies
 
+    if after.present?
+      ActiveSupport::Deprecation.new.warn("Operations::Command `after:` option is deprecated and will be " \
+        "removed in 1.0.0. Please use `on_success:` instead")
+    end
+
     preconditions.push(precondition) if precondition.present?
     super(operation, preconditions: preconditions, on_success: after, **options)
   end
