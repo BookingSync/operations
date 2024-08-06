@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.1](https://github.com/BookingSync/operations/tree/main)
+
+### Added
+
+- Allow passing multiple `hydrators:` to Operations::Form [\#49](https://github.com/BookingSync/operations/pull/49) ([pyromaniac](https://github.com/pyromaniac))
+
+### Improvements
+
+- Change default form hydration behavior - it is now deep merging params after hydration, so no need to do it in the hydrator. Controlled with `hydration_merge_params:` option. [\#49](https://github.com/BookingSync/operations/pull/49) ([pyromaniac](https://github.com/pyromaniac))
+
 ## [0.7.1](https://github.com/BookingSync/operations/tree/v0.7.1)
 
 ### Added

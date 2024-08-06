@@ -30,7 +30,7 @@ RSpec.describe Operations::Form do
   let(:default_options) do
     {
       model_map: proc { |_path| "DummyModel" },
-      hydrator: proc { |_form_class, params, **_context| { ignored: 42, name: "Batman" }.merge(params) }
+      hydrators: [proc { |_form_class, _params, **_context| { ignored: 42, name: "Batman" } }]
     }
   end
   let(:options) { default_options }
@@ -171,7 +171,8 @@ RSpec.describe Operations::Form do
          model_map=#<Proc:0x>,
          persisted=true,
          params_transformations=[],
-         hydrator=#<Proc:0x>,
+         hydrators=[#<Proc:0x>],
+         hydration_merge_params=true,
          form_class=#<Class
            attributes={:entities=>
               #<Operations::Form::Attribute

@@ -21,8 +21,10 @@
 #
 class Operations::Form
   include Dry::Core::Constants
-  include Dry::Equalizer(:command, :model_map, :persisted, :params_transformations, :hydrator, :form_class)
-  include Operations::Inspect.new(:model_name, :model_map, :persisted, :params_transformations, :hydrator, :form_class)
+  include Dry::Equalizer(:command, :model_map, :persisted,
+    :params_transformations, :hydrators, :hydration_merge_params, :form_class)
+  include Operations::Inspect.new(:model_name, :model_map, :persisted,
+    :params_transformations, :hydrators, :hydration_merge_params, :form_class)
 
   # We need to make deprecated inheritance from Operations::Form act exactly the
   # same way as from Operations::Form::Base. In order to do this, we are encapsulating all the
@@ -51,9 +53,16 @@ class Operations::Form
     option :persisted, type: Operations::Types::Bool, default: proc { true }
     option :params_transformations, type: Operations::Types::Coercible::Array.of(Operations::Types.Interface(:call)),
       default: proc { [] }
-    option :hydrator, type: Operations::Types.Interface(:call).optional, default: proc {}
+    option :hydrators, type: Operations::Types::Array.of(Operations::Types.Interface(:call)), default: proc { [] }
+    option :hydration_merge_params, type: Operations::Types::Bool, default: proc { true }
     option :base_class, type: Operations::Types::Class, default: proc { ::Operations::Form::Base }
   end)
+
+  def initialize(command, hydrator: nil, hydrators: [], **options)
+    hydrators.push(hydrator) if hydrator.present?
+
+    super(command, hydrators: hydrators, **options)
+  end
 
   def build(params = EMPTY_HASH, **context)
     instantiate_form(command.callable(transform_params(params, **context), **context))
@@ -81,10 +90,18 @@ class Operations::Form
 
   def instantiate_form(operation_result)
     form_class.new(
-      hydrator&.call(form_class, operation_result.params, **operation_result.context) || {},
+      hydrate_params(form_class, operation_result.params, **operation_result.context),
       messages: operation_result.errors.to_h,
       operation_result: operation_result
     )
+  end
+
+  def hydrate_params(form_class, params, **context)
+    hydrated_params = hydrators.inject({}) do |value, hydrator|
+      value.merge(hydrator.call(form_class, params, context).deep_symbolize_keys)
+    end
+    hydrated_params.deep_merge!(params) if hydration_merge_params
+    hydrated_params
   end
 
   def key_map

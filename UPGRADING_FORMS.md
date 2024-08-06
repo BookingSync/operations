@@ -31,7 +31,7 @@ class Post::Update
   def self.default_form
     @default_form ||= Operations::Form.new(
       default,
-      hydrator: Post::Update::Hydrator.new,
+      hydrators: [Post::Update::Hydrator.new],
       model_map: Post::Update::ModelMap.new,
       params_transformations: [
         ParamsMap.new(id: :post_id)
