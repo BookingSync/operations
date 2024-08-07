@@ -1025,7 +1025,8 @@ RSpec.describe Operations::Command do
               #<Operations::Form::Attribute
                name=:name,
                collection=false,
-               model_name=nil,
+               model_class=nil,
+               model_attribute=nil,
                form=nil>}>,
          form_hydrator=#<Proc:0x>,
          configuration=#<Operations::Configuration info_reporter=nil \

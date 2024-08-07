@@ -312,7 +312,7 @@ class ActiveRecordRepository
   include Dry::Monads[:result]
   extend Dry::Initializer
 
-  param :model, type: Types.Instance(Class).constrained(lt: ActiveRecord::Base)
+  param :model, type: Types::Class.constrained(lt: ActiveRecord::Base)
 
   def create(**attributes)
     record = model.new(**attributes)
@@ -933,8 +933,14 @@ class Post::Update
 end
 
 class Post::Update::ModelMap
-  def call(_path)
-    Post
+  MAPPING = {
+    %w[published_at] => Post, # a model can be passed but beware of circular dependencies, better use strings
+    %w[title] => "Post", # or a model name - safer option
+    %w[content] => "Post#body" # referencing different attribute is possible, useful for naming migration or translations
+  }.freeze
+
+  def call(path)
+    MAPPING[path] # returns the mapping for a single path
   end
 end
 ```

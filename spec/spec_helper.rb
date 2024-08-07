@@ -12,15 +12,12 @@ ActiveRecord::Base.logger = Logger.new(nil)
 ActiveRecord::Schema.define do
   create_table :users do |t|
     t.column :name, :string
+    t.column :age, :integer
   end
 end
 
 class User < ActiveRecord::Base
   validates :name, presence: true
-
-  def self.localized_attr_name_for(name, locale)
-    "#{name}_#{locale}"
-  end
 end
 
 RSpec.configure do |config|
