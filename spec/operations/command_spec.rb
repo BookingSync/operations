@@ -414,7 +414,7 @@ RSpec.describe Operations::Command do
         context "when on_failure callback failed" do
           let(:on_failure_callback) { ->(_, **) { Dry::Monads::Failure(:wow) } }
           let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
-          let(:error_reporter) { proc {} }
+          let(:error_reporter) { -> {} }
 
           before { allow(error_reporter).to receive(:call) }
 
@@ -463,7 +463,7 @@ RSpec.describe Operations::Command do
       context "when on_success callback failed but there is a wrapping transaction" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
         let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
-        let(:error_reporter) { proc {} }
+        let(:error_reporter) { -> {} }
 
         before { allow(error_reporter).to receive(:call) }
 
@@ -494,7 +494,7 @@ RSpec.describe Operations::Command do
       context "when on_success callback failed" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
         let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
-        let(:error_reporter) { proc {} }
+        let(:error_reporter) { -> {} }
 
         before { allow(error_reporter).to receive(:call) }
 
