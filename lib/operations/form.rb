@@ -98,7 +98,7 @@ class Operations::Form
 
   def hydrate_params(form_class, params, **context)
     hydrated_params = hydrators.inject({}) do |value, hydrator|
-      value.merge(hydrator.call(form_class, params, context).deep_symbolize_keys)
+      value.merge(hydrator.call(form_class, params, **context).deep_symbolize_keys)
     end
     hydrated_params.deep_merge!(params) if hydration_merge_params
     hydrated_params

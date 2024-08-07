@@ -29,8 +29,8 @@ RSpec.describe Operations::Form do
   end
   let(:default_options) do
     {
-      model_map: proc { |_path| "DummyModel" },
-      hydrators: [proc { |_form_class, _params, **_context| { ignored: 42, name: "Batman" } }]
+      model_map: ->(_path) { "DummyModel" },
+      hydrators: [->(_form_class, _params, **_context) { { ignored: 42, name: "Batman" } }]
     }
   end
   let(:options) { default_options }
