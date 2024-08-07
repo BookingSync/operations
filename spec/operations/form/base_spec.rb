@@ -86,49 +86,57 @@ RSpec.describe Operations::Form::Base do
               #<Operations::Form::Attribute
                name=:name,
                collection=false,
-               model_name=nil,
+               model_class=nil,
+               model_attribute=nil,
                form=nil>,
              :tags=>
               #<Operations::Form::Attribute
                name=:tags,
                collection=true,
-               model_name=nil,
+               model_class=nil,
+               model_attribute=nil,
                form=nil>,
              :author=>
               #<Operations::Form::Attribute
                name=:author,
                collection=false,
-               model_name=nil,
+               model_class=nil,
+               model_attribute=nil,
                form=#<Class
                  attributes={:title=>
                     #<Operations::Form::Attribute
                      name=:title,
                      collection=false,
-                     model_name=nil,
+                     model_class=nil,
+                     model_attribute=nil,
                      form=nil>}>>,
              :posts=>
               #<Operations::Form::Attribute
                name=:posts,
                collection=true,
-               model_name=nil,
+               model_class=nil,
+               model_attribute=nil,
                form=#<Class
                  attributes={:title=>
                     #<Operations::Form::Attribute
                      name=:title,
                      collection=false,
-                     model_name=nil,
+                     model_class=nil,
+                     model_attribute=nil,
                      form=nil>,
                    :id=>
                     #<Operations::Form::Attribute
                      name=:id,
                      collection=false,
-                     model_name=nil,
+                     model_class=nil,
+                     model_attribute=nil,
                      form=nil>,
                    :text=>
                     #<Operations::Form::Attribute
                      name=:text,
                      collection=false,
-                     model_name=nil,
+                     model_class=nil,
+                     model_attribute=nil,
                      form=nil>}>>}>
         INSPECT
       end

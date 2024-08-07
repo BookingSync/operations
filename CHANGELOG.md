@@ -4,6 +4,7 @@
 
 ### Added
 
+- Allow referencing and arbitrary model attrbiute from form object attribute with `model_name: "Post#title"` [\#50](https://github.com/BookingSync/operations/pull/50) ([pyromaniac](https://github.com/pyromaniac))
 - Allow passing multiple `hydrators:` to Operations::Form [\#49](https://github.com/BookingSync/operations/pull/49) ([pyromaniac](https://github.com/pyromaniac))
 
 ### Improvements

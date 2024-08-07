@@ -89,12 +89,13 @@ class Operations::Form::Base
 
   # :nodoc:
   module InstanceMethods
-    def type_for_attribute(name)
-      self.class.attributes[name.to_sym].model_type
+    # Copied from globalize-accessors, should be deprecated and removed as it is not a core method
+    def localized_attr_name_for(attr_name, locale)
+      "#{attr_name}_#{locale.to_s.underscore}"
     end
 
-    def localized_attr_name_for(name, locale)
-      self.class.attributes[name.to_sym].model_localized_attr_name(locale)
+    def type_for_attribute(name)
+      self.class.attributes[name.to_sym].model_type
     end
 
     def has_attribute?(name) # rubocop:disable Naming/PredicateName

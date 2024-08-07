@@ -36,6 +36,7 @@ RSpec.describe Operations::Form do
   let(:options) { default_options }
 
   before do
+    stub_const("DummyModel", Class.new)
     stub_const("DummyOperation", operation)
   end
 
@@ -178,19 +179,22 @@ RSpec.describe Operations::Form do
               #<Operations::Form::Attribute
                name=:entities,
                collection=true,
-               model_name="DummyModel",
+               model_class=DummyModel,
+               model_attribute="entities",
                form=#<Class
                  attributes={:id=>
                     #<Operations::Form::Attribute
                      name=:id,
                      collection=false,
-                     model_name="DummyModel",
+                     model_class=DummyModel,
+                     model_attribute="id",
                      form=nil>}>>,
              :name=>
               #<Operations::Form::Attribute
                name=:name,
                collection=false,
-               model_name="DummyModel",
+               model_class=DummyModel,
+               model_attribute="name",
                form=nil>}>>
       INSPECT
     end
