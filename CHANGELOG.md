@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.7.1](https://github.com/BookingSync/operations/tree/main)
+## [0.7.2](https://github.com/BookingSync/operations/tree/v0.7.2)
 
 ### Added
 
