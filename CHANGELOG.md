@@ -1,5 +1,11 @@
 # Changelog
 
+## [main](https://github.com/BookingSync/operations/tree/main)
+
+### Changes
+
+- Rename Operations::Form#model_name parameter to param_key and make it public preserving backwards compatibility. [\#52](https://github.com/BookingSync/operations/pull/52) ([pyromaniac](https://github.com/pyromaniac))
+
 ## [0.7.2](https://github.com/BookingSync/operations/tree/v0.7.2)
 
 ### Added

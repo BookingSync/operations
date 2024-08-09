@@ -11,27 +11,27 @@ class Operations::Form::Builder
 
   option :base_class, Operations::Types::Instance(Class)
 
-  def build(key_map:, model_map:, namespace: nil, class_name: nil, model_name: nil, persisted: nil)
+  def build(key_map:, model_map:, namespace: nil, class_name: nil, param_key: nil, persisted: nil)
     return namespace.const_get(class_name) if namespace && class_name && namespace.const_defined?(class_name)
 
-    traverse(key_map, model_map, namespace, class_name, model_name, [], persisted: persisted)
+    traverse(key_map, model_map, namespace, class_name, param_key, [], persisted: persisted)
   end
 
   private
 
-  def traverse(key_map, model_map, namespace, class_name, model_name, path, persisted: nil)
+  def traverse(key_map, model_map, namespace, class_name, param_key, path, persisted: nil)
     form = Class.new(base_class)
     namespace.const_set(class_name, form) if namespace&.name && class_name
-    define_model_name(form, model_name) if model_name && !form.name
+    define_model_name(form, param_key) if param_key && !form.name
     form.persisted = persisted
 
     key_map.each { |key| define_attribute(form, model_map, key, path) }
     form
   end
 
-  def define_model_name(form, model_name)
+  def define_model_name(form, param_key)
     form.define_singleton_method :model_name do
-      @model_name ||= ActiveModel::Name.new(self, nil, model_name)
+      @model_name ||= ActiveModel::Name.new(self, nil, param_key)
     end
   end
 

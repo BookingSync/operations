@@ -21,9 +21,9 @@
 #
 class Operations::Form
   include Dry::Core::Constants
-  include Dry::Equalizer(:command, :model_map, :persisted,
+  include Dry::Equalizer(:command, :param_key, :model_map, :persisted,
     :params_transformations, :hydrators, :hydration_merge_params, :form_class)
-  include Operations::Inspect.new(:model_name, :model_map, :persisted,
+  include Operations::Inspect.new(:param_key, :model_map, :persisted,
     :params_transformations, :hydrators, :hydration_merge_params, :form_class)
 
   # We need to make deprecated inheritance from Operations::Form act exactly the
@@ -48,7 +48,7 @@ class Operations::Form
 
   include Dry::Initializer.define(lambda do
     param :command, type: Operations::Types.Interface(:operation, :contract, :call)
-    option :model_name, type: Operations::Types::String.optional, default: proc {}, reader: false
+    option :param_key, type: Operations::Types::String.optional, default: proc {}, reader: false
     option :model_map, type: Operations::Types.Interface(:call).optional, default: proc {}
     option :persisted, type: Operations::Types::Bool, default: proc { true }
     option :params_transformations, type: Operations::Types::Coercible::Array.of(Operations::Types.Interface(:call)),
@@ -58,10 +58,10 @@ class Operations::Form
     option :base_class, type: Operations::Types::Class, default: proc { ::Operations::Form::Base }
   end)
 
-  def initialize(command, hydrator: nil, hydrators: [], **options)
+  def initialize(command, hydrator: nil, hydrators: [], model_name: nil, **options)
     hydrators.push(hydrator) if hydrator.present?
 
-    super(command, hydrators: hydrators, **options)
+    super(command, hydrators: hydrators, param_key: model_name, **options)
   end
 
   def build(params = EMPTY_HASH, **context)
@@ -74,7 +74,11 @@ class Operations::Form
 
   def form_class
     @form_class ||= Operations::Form::Builder.new(base_class: base_class)
-      .build(key_map: key_map, model_map: model_map, model_name: model_name, persisted: persisted)
+      .build(key_map: key_map, model_map: model_map, param_key: param_key, persisted: persisted)
+  end
+
+  def param_key
+    @param_key ||= "#{command.operation.class.name.underscore}_form" if command.operation.class.name
   end
 
   private
@@ -106,9 +110,5 @@ class Operations::Form
 
   def key_map
     @key_map ||= command.contract.schema.key_map
-  end
-
-  def model_name
-    @model_name ||= ("#{command.operation.class.name.underscore}_form" if command.operation.class.name)
   end
 end

@@ -106,7 +106,7 @@ RSpec.describe Operations::Form do
     let(:context) { {} }
     let(:options) do
       default_options.merge(
-        model_name: "dummy_form",
+        param_key: "dummy_form",
         params_transformations: lambda { |_form_class, params, **_context|
           params.transform_keys { |key| key == :alias_name ? :name : key }
         }
@@ -168,7 +168,7 @@ RSpec.describe Operations::Form do
     specify do
       expect(pretty_inspect.gsub(%r{Proc:0x[^>]+}, "Proc:0x")).to eq(<<~INSPECT)
         #<Operations::Form
-         model_name="dummy_operation_form",
+         param_key="dummy_operation_form",
          model_map=#<Proc:0x>,
          persisted=true,
          params_transformations=[],
