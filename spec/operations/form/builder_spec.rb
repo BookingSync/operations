@@ -45,8 +45,8 @@ RSpec.describe Operations::Form::Builder do
       let(:model_map_hash) { { ["name"] => "Dummy1", ["translations", %r{singular|plural}] => "Dummy2" } }
       let(:model_map) { Operations::Form::DeprecatedLegacyModelMapImplementation.new(model_map_hash) }
 
-      context "with model_name" do
-        let(:options) { { model_name: "my_form" } }
+      context "with param_key" do
+        let(:options) { { param_key: "my_form" } }
 
         it "defines attributes tree correctly" do
           expect(form_class).to have_attributes(

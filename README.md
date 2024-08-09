@@ -952,7 +952,7 @@ class Post::Update
   def self.default_form
     @default_form ||= Operations::Form.new(
       default,
-      model_name: "custom_post_update_form", # form name can be customized
+      param_key: "custom_post_update_form", # form param key can be customized
     )
   end
 end
