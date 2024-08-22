@@ -65,10 +65,13 @@ class Operations::Components::Base
       failure.map { |f| normalize_failure(f) }
     when Hash
       {
-        message: failure[:message] || failure[:error],
+        # Odd interface inconsistency in DRY: dry-validation's key().failure() requires `:text` key
+        # while Message::Resolver requires `:message` key since it can be both: Symbol or String.
+        # And `:error` alias key is just for personal preference.
+        message: failure[:message] || failure[:text] || failure[:error],
         tokens: failure[:tokens],
         path: failure[:path],
-        meta: failure.except(:message, :error, :tokens, :path)
+        meta: failure.except(:message, :text, :error, :tokens, :path)
       }
     when String, Symbol
       { message: failure }

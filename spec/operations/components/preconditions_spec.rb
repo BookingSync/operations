@@ -38,13 +38,22 @@ RSpec.describe Operations::Components::Preconditions do
     context "with multiple preconditions" do
       let(:preconditions) do
         [
-          ->(**) { [:failure1, { message: "failure2", path: [:name] }, "failure3"] },
-          ->(**) { { error: "Falure", foo: 42 } },
+          lambda { |**|
+            [
+              :failure1,
+              { message: :failure1, path: nil },
+              { message: "failure2", path: [:name] },
+              "failure3",
+              { text: "Failure 4", path: [:name, 1], code: :foobar }
+            ]
+          },
+          ->(**) { { error: "Failure", foo: 42, path: [nil] } },
           ->(**) {}
         ]
       end
 
       it "aggregates failures" do
+        pp call.errors.to_h
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -56,10 +65,11 @@ RSpec.describe Operations::Components::Preconditions do
               to_h: {
                 nil => [
                   { text: "Failure 1", code: :failure1 },
+                  { text: "Failure 1", code: :failure1 },
                   "failure3",
-                  { text: "Falure", foo: 42 }
+                  { text: "Failure", foo: 42 }
                 ],
-                name: ["failure2"]
+                name: [["failure2"], { 1 => [{ text: "Failure 4", code: :foobar }] }]
               }
             )
           )
@@ -69,18 +79,20 @@ RSpec.describe Operations::Components::Preconditions do
         expect(call.errors(full: true).to_h).to eq(
           nil => [
             { text: "Failure 1", code: :failure1 },
+            { text: "Failure 1", code: :failure1 },
             "failure3",
-            { text: "Falure", foo: 42 }
+            { text: "Failure", foo: 42 }
           ],
-          name: ["name failure2"]
+          name: [["name failure2"], { 1 => [{ code: :foobar, text: "1 Failure 4" }] }]
         )
         expect(call.errors(locale: :fr).to_h).to eq(
           nil => [
             { text: "Échec 1", code: :failure1 },
+            { text: "Échec 1", code: :failure1 },
             "failure3",
-            { text: "Falure", foo: 42 }
+            { text: "Failure", foo: 42 }
           ],
-          name: ["failure2"]
+          name: [["failure2"], { 1 => [{ code: :foobar, text: "Failure 4" }] }]
         )
       end
     end
