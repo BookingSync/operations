@@ -83,20 +83,21 @@ module Operations::Convenience
     const_set(:"#{prefix.to_s.camelize}Contract", contract)
   end
 
+  def component(name, from: Object, dry_initializer: false, dry_monads_result: false, &block) # rubocop:disable Metrics/CyclomaticComplexity
+    raise ArgumentError.new("Please provide either a superclass or a block for #{name}") unless from || block
+
+    klass = Class.new(from)
+    klass.extend(Dry::Initializer) if dry_initializer && !klass.include?(Dry::Initializer) # rubocop:disable Rails/NegateInclude
+    klass.include(Dry::Monads[:result]) if dry_monads_result && !klass.is_a?(Dry::Monads[:result])
+    klass.define_method(:call, &block) if block
+
+    const_set(name.to_s.camelize, klass)
+  end
+
   %w[policy precondition callback].each do |kind|
     define_method kind do |prefix = nil, from: Object, &block|
-      raise ArgumentError.new("Please provide either a superclass or a block for #{kind}") unless from || block
-
-      klass = Class.new(from)
-
-      if from == Object
-        klass.extend(Dry::Initializer)
-        klass.include(Dry::Monads[:result])
-      end
-
-      klass.define_method(:call, &block) if block
-
-      const_set(:"#{prefix.to_s.camelize}#{kind.camelize}", klass)
+      component([prefix, kind].compact.join("_"), from: from,
+        dry_initializer: true, dry_monads_result: true, &block)
     end
   end
 end

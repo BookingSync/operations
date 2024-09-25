@@ -66,12 +66,39 @@ RSpec.describe Operations::Convenience do
     end
   end
 
+  describe "#component" do
+    subject(:component) { dummy_operation.component(name, **options) { :foobar } }
+
+    let(:name) { :custom_hydrator }
+    let(:options) { {} }
+
+    specify do
+      expect(component.name).to eq("DummyOperation::CustomHydrator")
+      expect(component).not_to be_a(Dry::Initializer)
+      expect(component).not_to include(Dry::Monads[:result])
+      expect(component.new.call).to eq(:foobar)
+    end
+
+    context "with options given" do
+      let(:options) { { dry_initializer: true, dry_monads_result: true } }
+
+      specify do
+        expect(component.name).to eq("DummyOperation::CustomHydrator")
+        expect(component).to be_a(Dry::Initializer)
+        expect(component).to include(Dry::Monads[:result])
+        expect(component.new.call).to eq(:foobar)
+      end
+    end
+  end
+
   %w[policy precondition callback].each do |kind|
     describe "##{kind}" do
       subject(:component) { dummy_operation.public_send(kind) { :foobar } }
 
       specify do
         expect(component.name).to eq("DummyOperation::#{kind.camelize}")
+        expect(component).to be_a(Dry::Initializer)
+        expect(component).to include(Dry::Monads[:result])
         expect(component.new.call).to eq(:foobar)
       end
 
@@ -89,6 +116,8 @@ RSpec.describe Operations::Convenience do
         specify do
           expect(component.name).to eq("DummyOperation::#{kind.camelize}")
           expect(component).to be < parent
+          expect(component).to be_a(Dry::Initializer)
+          expect(component).to include(Dry::Monads[:result])
           expect(component.new.call).to eq(:foobar)
         end
       end
