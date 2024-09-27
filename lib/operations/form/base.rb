@@ -126,13 +126,16 @@ class Operations::Form::Base
         build_attribute.form.new(*args, **kwargs)
       elsif plural_build_attribute&.form
         plural_build_attribute.form.new(*args, **kwargs)
+      elsif operation_result
+        operation_result.context[name]
       end
     end
 
     def respond_to_missing?(name, *)
       has_attribute?(name) ||
         build_nested_form?(build_attribute_name(name)) ||
-        self.class.attributes[nested_attribute_name(name)]&.form
+        self.class.attributes[nested_attribute_name(name)]&.form ||
+        operation_result&.context&.key?(name)
     end
 
     def model_name

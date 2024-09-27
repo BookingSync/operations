@@ -30,7 +30,7 @@ RSpec.describe Operations::Form::Base do
     end
     let(:attributes) { {} }
     let(:messages) { {} }
-    let(:options) { {} }
+    let(:options) { { operation_result: instance_double(Operations::Result, context: { books: [] }) } }
 
     before do
       stub_const("Dummy::Form", form_class)
@@ -285,6 +285,7 @@ RSpec.describe Operations::Form::Base do
       end
 
       specify { expect(form.build_tag).to be_nil }
+      specify { expect(form.books).to eq [] }
       specify { expect(form.foobar).to be_nil }
     end
 
@@ -295,6 +296,7 @@ RSpec.describe Operations::Form::Base do
       specify { expect(form).to respond_to(:build_post) }
       specify { expect(form).to respond_to(:author_attributes=) }
       specify { expect(form).to respond_to(:posts_attributes=) }
+      specify { expect(form).to respond_to(:books) }
       specify { expect(form).not_to respond_to(:foobar) }
       specify { expect(form).not_to respond_to(:build_tag) }
       specify { expect(form).not_to respond_to(:tags_attributes=) }
