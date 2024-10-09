@@ -532,7 +532,7 @@ RSpec.describe Operations::Command do
       specify do
         expect { call! }.to raise_error do |error|
           expect(error).to be_a(Operations::Command::OperationFailed)
-          expect(error.message).to eq("Proc failed on contract")
+          expect(error.message).to eq("Proc failed on contract\nname - is missing\n")
           expect(error.sentry_context).to include(errors: { name: ["name is missing"] })
         end
       end
@@ -553,7 +553,7 @@ RSpec.describe Operations::Command do
       specify do
         expect { try_call! }.to raise_error do |error|
           expect(error).to be_a(Operations::Command::OperationFailed)
-          expect(error.message).to eq("Proc failed on contract")
+          expect(error.message).to eq("Proc failed on contract\nname - is missing\n")
           expect(error.sentry_context).to include(errors: { name: ["name is missing"] })
         end
       end
@@ -577,7 +577,7 @@ RSpec.describe Operations::Command do
       specify do
         expect { try_call! }.to raise_error do |error|
           expect(error).to be_a(Operations::Command::OperationFailed)
-          expect(error.message).to eq("Proc failed on operation")
+          expect(error.message).to eq("Proc failed on operation\n - Runtime error\n")
           expect(error.sentry_context).to include(errors: { nil => ["Runtime error"] })
         end
       end

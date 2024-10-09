@@ -148,6 +148,20 @@ class Operations::Command
     def sentry_context
       operation_result.as_json(include_command: true)
     end
+
+    def message
+      [super, error_details].join("\n")
+    end
+
+    private
+
+    def error_details
+      operation_result
+        .errors
+        .messages
+        .map { |error| [[error.path, error.text].join(" - "), error.meta.to_a.join(": :")] }
+        .join("\n")
+    end
   end
 
   param :operation, Operations::Types.Interface(:call)

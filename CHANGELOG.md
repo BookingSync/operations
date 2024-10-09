@@ -3,6 +3,9 @@
 ## [main](https://github.com/BookingSync/operations/tree/main)
 
 ### Changes
+- Changed `Operations::Command::OperationFailed#message` to include detailed error messages
+
+### Changes
 
 - Rename Operations::Form#model_name parameter to param_key and make it public preserving backwards compatibility. [\#52](https://github.com/BookingSync/operations/pull/52) ([pyromaniac](https://github.com/pyromaniac))
 
