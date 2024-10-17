@@ -173,7 +173,7 @@ class Operations::Form::Base
     end
 
     def valid?
-      errors.empty?
+      messages.empty?
     end
 
     def read_attribute(name)

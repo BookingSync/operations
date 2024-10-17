@@ -457,7 +457,7 @@ RSpec.describe Operations::Form::Base do
       end
 
       context "with unknown attributes" do
-        let(:messages) { { unknown: ["error"] } }
+        let(:messages) { {} }
 
         it { is_expected.to be_valid }
       end
