@@ -60,6 +60,7 @@ module Operations::Convenience
   def self.extended(mod)
     mod.include Dry::Monads[:result]
     mod.include Dry::Monads::Do.for(:call)
+    mod.include Dry::Core::Constants
     mod.extend Dry::Initializer
   end
 
