@@ -10,5 +10,6 @@ gem "rubocop-rails", require: false
 gem "rubocop-rspec", require: false
 gem "activerecord", "~> 5.2.0"
 gem "activesupport", "~> 5.2.0"
+gem "sqlite3", "~> 1.4"
 
 gemspec path: "../"

@@ -47,13 +47,12 @@ RSpec.describe Operations::Components::Preconditions do
               { text: "Failure 4", path: [:name, 1], code: :foobar }
             ]
           },
-          ->(**) { { error: "Failure", foo: 42, path: [nil] } },
+          ->(params, **) { { error: "Failure", path: [nil], **params } },
           ->(**) {}
         ]
       end
 
       it "aggregates failures" do
-        pp call.errors.to_h
         expect(call)
           .to be_failure
           .and have_attributes(
@@ -67,7 +66,7 @@ RSpec.describe Operations::Components::Preconditions do
                   { text: "Failure 1", code: :failure1 },
                   { text: "Failure 1", code: :failure1 },
                   "failure3",
-                  { text: "Failure", foo: 42 }
+                  { text: "Failure", name: "Batman" }
                 ],
                 name: [["failure2"], { 1 => [{ text: "Failure 4", code: :foobar }] }]
               }
@@ -81,7 +80,7 @@ RSpec.describe Operations::Components::Preconditions do
             { text: "Failure 1", code: :failure1 },
             { text: "Failure 1", code: :failure1 },
             "failure3",
-            { text: "Failure", foo: 42 }
+            { text: "Failure", name: "Batman" }
           ],
           name: [["name failure2"], { 1 => [{ code: :foobar, text: "1 Failure 4" }] }]
         )
@@ -90,7 +89,7 @@ RSpec.describe Operations::Components::Preconditions do
             { text: "Échec 1", code: :failure1 },
             { text: "Échec 1", code: :failure1 },
             "failure3",
-            { text: "Failure", foo: 42 }
+            { text: "Failure", name: "Batman" }
           ],
           name: [["failure2"], { 1 => [{ code: :foobar, text: "Failure 4" }] }]
         )

@@ -2,11 +2,13 @@
 
 ## [main](https://github.com/BookingSync/operations/tree/main)
 
-### Changes
-- Changed `Operations::Command::OperationFailed#message` to include detailed error messages
+### Added
+
+- Allow receiving params in preconditions. [\#56](https://github.com/BookingSync/operations/pull/56) ([pyromaniac](https://github.com/pyromaniac))
 
 ### Changes
 
+- Changed `Operations::Command::OperationFailed#message` to include detailed error messages. [\#55](https://github.com/BookingSync/operations/pull/55) ([Azdaroth](https://github.com/Azdaroth))
 - Rename Operations::Form#model_name parameter to param_key and make it public preserving backwards compatibility. [\#52](https://github.com/BookingSync/operations/pull/52) ([pyromaniac](https://github.com/pyromaniac))
 
 ## [0.7.2](https://github.com/BookingSync/operations/tree/v0.7.2)

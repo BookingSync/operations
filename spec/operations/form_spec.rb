@@ -163,10 +163,10 @@ RSpec.describe Operations::Form do
   end
 
   describe "#pretty_print" do
-    subject(:pretty_inspect) { form.pretty_inspect }
+    subject(:pretty_inspect) { normalize_inspect(form.pretty_inspect) }
 
     specify do
-      expect(pretty_inspect.gsub(%r{Proc:0x[^>]+}, "Proc:0x")).to eq(<<~INSPECT)
+      expect(pretty_inspect).to eq(<<~INSPECT)
         #<Operations::Form
          param_key="dummy_operation_form",
          model_map=#<Proc:0x>,
@@ -175,21 +175,21 @@ RSpec.describe Operations::Form do
          hydrators=[#<Proc:0x>],
          hydration_merge_params=true,
          form_class=#<Class
-           attributes={:entities=>
+           attributes={entities:
               #<Operations::Form::Attribute
                name=:entities,
                collection=true,
                model_class=DummyModel,
                model_attribute="entities",
                form=#<Class
-                 attributes={:id=>
+                 attributes={id:
                     #<Operations::Form::Attribute
                      name=:id,
                      collection=false,
                      model_class=DummyModel,
                      model_attribute="id",
                      form=nil>}>>,
-             :name=>
+             name:
               #<Operations::Form::Attribute
                name=:name,
                collection=false,
