@@ -19,7 +19,8 @@ require "operations/components/prechecks"
 class Operations::Components::Preconditions < Operations::Components::Prechecks
   def call(params, context)
     failures = callable.flat_map do |entry|
-      results = Array.wrap(entry.call(**context))
+      arg_names = call_args(entry, types: %i[req opt])
+      results = Array.wrap(arg_names.one? ? entry.call(params, **context) : entry.call(**context))
       results.filter_map { |result| result_failure(result) }
     end
 

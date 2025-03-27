@@ -5,6 +5,7 @@ require "operations"
 require "pp" # rubocop:disable Lint/RedundantRequireStatement
 require "active_record"
 require "database_cleaner-active_record"
+require "./spec/support/test_helpers"
 
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 ActiveRecord::Base.logger = Logger.new(nil)
@@ -36,6 +37,8 @@ RSpec.configure do |config|
   config.profile_examples = 10
   config.order = :random
   Kernel.srand config.seed
+
+  config.include TestHelpers
 
   config.before(:suite) do
     DatabaseCleaner.clean_with :truncation

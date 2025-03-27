@@ -1005,13 +1005,13 @@ RSpec.describe Operations::Command do
   end
 
   describe "#pretty_inspect" do
-    subject(:pretty_inspect) { command.pretty_inspect }
+    subject(:pretty_inspect) { normalize_inspect(command.pretty_inspect) }
 
     specify do
-      expect(pretty_inspect.gsub(%r{Proc:0x[^>]+}, "Proc:0x").gsub(%r{Class:0x[^>]+}, "Class:0x")).to eq(<<~INSPECT)
+      expect(pretty_inspect).to eq(<<~INSPECT)
         #<Operations::Command
          operation=#<Proc:0x>,
-         contract=#<#<Class:0x> schema=#<Dry::Schema::Processor keys=[:name] rules={:name=>"key?(:name) \
+         contract=#<#<Class:0x> schema=#<Dry::Schema::Processor keys=[:name] rules={name: "key?(:name) \
         AND key[name](str? AND filled?)"}> rules=[#<Dry::Validation::Rule keys=[]>]>,
          policies=[#<Proc:0x>],
          idempotency=[],
@@ -1021,7 +1021,7 @@ RSpec.describe Operations::Command do
          form_model_map={},
          form_base=#<Class attributes={}>,
          form_class=#<Class
-           attributes={:name=>
+           attributes={name:
               #<Operations::Form::Attribute
                name=:name,
                collection=false,

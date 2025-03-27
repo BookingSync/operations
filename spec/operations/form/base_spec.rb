@@ -77,61 +77,61 @@ RSpec.describe Operations::Form::Base do
     end
 
     describe ".pretty_inspect" do
-      subject(:pretty_inspect) { form_class.pretty_inspect }
+      subject(:pretty_inspect) { normalize_inspect(form_class.pretty_inspect) }
 
       specify do
         expect(pretty_inspect).to eq(<<~INSPECT)
           #<Class
-           attributes={:name=>
+           attributes={name:
               #<Operations::Form::Attribute
                name=:name,
                collection=false,
                model_class=nil,
                model_attribute=nil,
                form=nil>,
-             :tags=>
+             tags:
               #<Operations::Form::Attribute
                name=:tags,
                collection=true,
                model_class=nil,
                model_attribute=nil,
                form=nil>,
-             :author=>
+             author:
               #<Operations::Form::Attribute
                name=:author,
                collection=false,
                model_class=nil,
                model_attribute=nil,
                form=#<Class
-                 attributes={:title=>
+                 attributes={title:
                     #<Operations::Form::Attribute
                      name=:title,
                      collection=false,
                      model_class=nil,
                      model_attribute=nil,
                      form=nil>}>>,
-             :posts=>
+             posts:
               #<Operations::Form::Attribute
                name=:posts,
                collection=true,
                model_class=nil,
                model_attribute=nil,
                form=#<Class
-                 attributes={:title=>
+                 attributes={title:
                     #<Operations::Form::Attribute
                      name=:title,
                      collection=false,
                      model_class=nil,
                      model_attribute=nil,
                      form=nil>,
-                   :id=>
+                   id:
                     #<Operations::Form::Attribute
                      name=:id,
                      collection=false,
                      model_class=nil,
                      model_attribute=nil,
                      form=nil>,
-                   :text=>
+                   text:
                     #<Operations::Form::Attribute
                      name=:text,
                      collection=false,
@@ -497,7 +497,7 @@ RSpec.describe Operations::Form::Base do
     end
 
     describe "#pretty_inspect" do
-      subject(:pretty_inspect) { form.pretty_inspect }
+      subject(:pretty_inspect) { normalize_inspect(form.pretty_inspect) }
 
       before do
         allow(form.errors).to receive(:inspect).and_return("#<ActiveModel::Errors>")
@@ -507,11 +507,11 @@ RSpec.describe Operations::Form::Base do
       specify do
         expect(pretty_inspect).to eq(<<~INSPECT)
           #<Dummy::Form
-           attributes={:name=>nil,
-             :tags=>[],
-             :author=>
-              #<Dummy::Author attributes={:title=>nil}, errors=#<ActiveModel::Errors>>,
-             :posts=>[]},
+           attributes={name: nil,
+             tags: [],
+             author:
+              #<Dummy::Author attributes={title: nil}, errors=#<ActiveModel::Errors>>,
+             posts: []},
            errors=#<ActiveModel::Errors>>
         INSPECT
       end

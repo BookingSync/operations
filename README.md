@@ -377,7 +377,7 @@ When we need to check against the application state, preconditions are coming to
 
 There are many potential scenarios when it can be handy. For example, we might need to render a button only when the subject entity satisfies preconditions for a particular operation. Or we want to return a list of possible operations from an API we have.
 
-**Important:** a rule of thumb here is that preconditions don't depend on the user input, they only check the existing state of the application and they are supposed to access only the operation context for this purpose, not params.
+**Important:** a rule of thumb here is that preconditions always depend on application/entities state. If a check depends only on params, then it is rather a Contract validation.
 
 ```ruby
 class Post::Publish
@@ -425,7 +425,7 @@ class Post::Publish::NotPublishedPrecondition
   include Dry::Monads[:result]
 
   def call(post:, **)
-    return Failure(error: :already_published, tokens: { published_at: post.published_at }) if post.published?
+    return Failure(error: :already_published, path: [:post_id], tokens: { published_at: post.published_at }) if post.published?
 
     Success()
   end

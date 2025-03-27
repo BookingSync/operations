@@ -140,7 +140,7 @@ class Operations::Command
 
     def initialize(operation_result)
       @operation_result = operation_result
-      operation_class_name = operation_result.operation&.operation&.class&.name
+      operation_class_name = operation_result.operation.operation.class.name if operation_result.operation
 
       super("#{operation_class_name} failed on #{operation_result.component}")
     end
