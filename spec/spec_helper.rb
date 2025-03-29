@@ -2,7 +2,7 @@
 
 require "bundler/setup"
 require "operations"
-require "pp" # rubocop:disable Lint/RedundantRequireStatement
+require "pp"
 require "active_record"
 require "database_cleaner-active_record"
 require "./spec/support/test_helpers"
