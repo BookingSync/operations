@@ -89,6 +89,8 @@ class Operations::Form::Base
 
   # :nodoc:
   module InstanceMethods
+    delegate :model_name, to: :class
+
     # Copied from globalize-accessors, should be deprecated and removed as it is not a core method
     def localized_attr_name_for(attr_name, locale)
       "#{attr_name}_#{locale.to_s.underscore}"
@@ -136,10 +138,6 @@ class Operations::Form::Base
         build_nested_form?(build_attribute_name(name)) ||
         self.class.attributes[nested_attribute_name(name)]&.form ||
         operation_result&.context&.key?(name)
-    end
-
-    def model_name
-      self.class.model_name
     end
 
     def persisted?
