@@ -23,6 +23,7 @@ class Operations::Components::Callback < Operations::Components::Base
   rescue Dry::Monads::Do::Halt => e
     e.result
   rescue => e
+    error_reporter&.call(e)
     Failure(e)
   end
 
