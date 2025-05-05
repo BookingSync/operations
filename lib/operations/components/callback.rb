@@ -22,9 +22,6 @@ class Operations::Components::Callback < Operations::Components::Base
     Success(result)
   rescue Dry::Monads::Do::Halt => e
     e.result
-  rescue => e
-    error_reporter&.call(e)
-    Failure(e)
   end
 
   def entry_result(entry, operation_result, **context)
