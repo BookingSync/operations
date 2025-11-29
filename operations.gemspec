@@ -12,11 +12,12 @@ Gem::Specification.new do |spec|
   spec.description   = "Operations framework"
   spec.homepage      = "https://github.com/BookingSync/operations"
   spec.license       = "MIT"
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.7.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/BookingSync/operations"
   spec.metadata["changelog_uri"] = "https://github.com/BookingSync/operations"
+  spec.metadata["rubygems_mfa_required"] = "true"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
@@ -29,15 +30,12 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "appraisal"
   spec.add_development_dependency "database_cleaner-active_record"
-  spec.add_development_dependency "sqlite3", ">= 1.4"
+  spec.add_development_dependency "sqlite3"
 
-  spec.add_dependency "activerecord", ">= 5.2.0"
-  spec.add_dependency "activesupport", ">= 5.2.0"
-  spec.add_dependency "after_commit_everywhere"
+  spec.add_dependency "activerecord", ">= 7.2.0"
+  spec.add_dependency "activesupport", ">= 7.2.0"
   spec.add_dependency "dry-monads"
   spec.add_dependency "dry-struct"
   spec.add_dependency "dry-validation"
-  spec.metadata = {
-    "rubygems_mfa_required" => "true"
-  }
+  spec.add_dependency "omni_service"
 end

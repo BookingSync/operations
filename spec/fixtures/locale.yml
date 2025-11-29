@@ -5,6 +5,8 @@ en:
 
       rules:
         unauthorized: "Unauthorized"
+        wow: "Wow error"
+        yay: "Yay error"
 
 fr:
   operations:
