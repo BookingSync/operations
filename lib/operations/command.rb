@@ -6,8 +6,6 @@ require "operations/components/policies"
 require "operations/components/preconditions"
 require "operations/components/idempotency"
 require "operations/components/operation"
-require "operations/components/on_success"
-require "operations/components/on_failure"
 # This is an entry point interface for every operation in
 # the operations layer. Every operation instance consists of 4
 # components: contract, policy, preconditions and operation
@@ -131,7 +129,7 @@ class Operations::Command
   extend Dry::Initializer
   include Dry::Core::Constants
   include Dry::Monads[:result]
-  include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad, :execute_operation)
+  include Dry::Monads::Do.for(:call_monad, :callable_monad, :validate_monad)
   include Dry::Equalizer(*COMPONENTS)
 
   # Provides message and meaningful sentry context for failed operations
@@ -175,7 +173,6 @@ class Operations::Command
   option :form_base, Operations::Types::Class, default: proc { ::Operations::Form::Base }
   option :form_class, Operations::Types::Class.optional, default: proc {}, reader: false
   option :form_hydrator, Operations::Types.Interface(:call), default: proc { FORM_HYDRATOR }
-  option :configuration, Operations::Configuration, default: proc { Operations.default_config }
 
   include Operations::Inspect.new(dry_initializer.attributes(self).keys)
 
@@ -286,15 +283,14 @@ class Operations::Command
 
   # Returns boolean result instead of Operations::Result for validate method.
   # True on success and false on failure.
-  def valid?(*args, **kwargs)
-    validate(*args, **kwargs).success?
+  def valid?(*, **)
+    validate(*, **).success?
   end
 
   def to_hash
     {
       **main_components_to_hash,
-      **form_components_to_hash,
-      configuration: configuration
+      **form_components_to_hash
     }
   end
 
@@ -328,11 +324,8 @@ class Operations::Command
   def component(identifier)
     (@components ||= {})[identifier] = begin
       component_kwargs = {
-        message_resolver: contract.message_resolver,
-        info_reporter: configuration.info_reporter,
-        error_reporter: configuration.error_reporter
+        message_resolver: contract.message_resolver
       }
-      component_kwargs[:after_commit] = configuration.after_commit if identifier == :on_success
       callable = send(identifier)
 
       "::Operations::Components::#{identifier.to_s.camelize}".constantize.new(
@@ -343,19 +336,163 @@ class Operations::Command
   end
 
   def call_monad(params, context)
-    operation_result = unwrap_monad(execute_operation(params, context))
-
-    return operation_result unless operation_result.component == :operation
-
-    component = operation_result.success? ? component(:on_success) : component(:on_failure)
-    component.call(operation_result)
+    OmniService.with_sync_callbacks do
+      omni_service_result_to_monad(transaction_component.call(params, **context))
+    end
   end
 
-  def execute_operation(params, context)
-    configuration.transaction.call do
-      contract_result = yield validate_monad(params, context, call_idempotency: true)
+  def transaction_component
+    @transaction_component ||= OmniService::Transaction.new(
+      validated_operation_adapter,
+      on_success: on_success_adapter,
+      on_failure: on_failure_adapter
+    )
+  end
 
-      yield component(:operation).call(contract_result.params, contract_result.context)
+  def validated_operation_adapter
+    @validated_operation_adapter ||= lambda { |params, **context|
+      validation_result = unwrap_monad(validate_monad(params, context, call_idempotency: true))
+
+      if validation_result.failure? || validation_result.component == :idempotency
+        raise OmniService::Transaction::Halt.new(operations_result_to_omni_service(validation_result))
+      end
+
+      result = component(:operation).call(validation_result.params, validation_result.context)
+      operations_result_to_omni_service(result)
+    }
+  end
+
+  def on_success_adapter
+    on_success.map { |callback| wrap_success_callback(callback) }
+  end
+
+  def on_failure_adapter
+    on_failure.map { |callback| wrap_failure_callback(callback) }
+  end
+
+  def wrap_success_callback(callback)
+    component = OmniService::Component.wrap(callback)
+    lambda { |params, **context|
+      clean_context = context.except(:__original_component__)
+      operations_result = Operations::Result.new(component: :operation, params: params, context: clean_context)
+      result = call_callback(component, operations_result)
+      OmniService::Result.build(self, params: [params], context: context.merge(__callback_result__: result))
+    }
+  end
+
+  def wrap_failure_callback(callback)
+    component = OmniService::Component.wrap(callback)
+    lambda { |omni_result|
+      # Only invoke callbacks when component is :operation (matches original behavior)
+      unless omni_result.context[:__original_component__] == :operation
+        return OmniService::Result.build(self, params: omni_result.params,
+          context: omni_result.context.merge(__callback_result__: nil))
+      end
+
+      clean_context = omni_result.context.except(:__original_component__)
+      params = omni_result.params.first || {}
+      callback_context = clean_context.merge(operation_failure: omni_errors_to_hash(omni_result.errors))
+      operations_result = Operations::Result.new(component: :operation, params: params, context: callback_context)
+      result = call_callback(component, operations_result)
+      OmniService::Result.build(self, params: [params], context: callback_context.merge(__callback_result__: result))
+    }
+  end
+
+  def call_callback(component, operations_result)
+    callback_result = case component.signature
+    in [0, true]
+      component.callable.call(**operations_result.context)
+    in [_, true]
+      component.callable.call(operations_result.params, **operations_result.context)
+    in [_, false]
+      component.callable.call(operations_result)
+    end
+
+    omni_callback_result = OmniService::Result.process(component.callable, callback_result)
+    omni_service_callback_result_to_operations_result(omni_callback_result)
+  end
+
+  def omni_service_callback_result_to_operations_result(omni_result)
+    Operations::Result.new(
+      component: omni_result.context[:__original_component__] || :operation,
+      params: omni_result.params.inject({}, :merge),
+      context: omni_result.context.except(:__callback_result__, :__original_component__),
+      errors: omni_service_errors_to_operations(omni_result.errors),
+      on_success: [],
+      on_failure: []
+    )
+  end
+
+  def operations_result_to_omni_service(result)
+    OmniService::Result.new(
+      operation: self,
+      params: [result.params],
+      context: result.context.merge(__original_component__: result.component),
+      errors: result.success? ? [] : operations_errors_to_omni_service(result.errors)
+    )
+  end
+
+  def operations_errors_to_omni_service(errors)
+    errors.map do |error|
+      OmniService::Error.build(
+        self,
+        message: error.text,
+        path: error.path.compact,
+        code: error.meta[:code]
+      )
+    end
+  end
+
+  def omni_service_result_to_monad(omni_result)
+    omni_service_result_to_operations_result(omni_result).to_monad
+  end
+
+  def omni_service_result_to_operations_result(omni_result)
+    Operations::Result.new(
+      component: omni_result.context[:__original_component__] || :operation,
+      params: omni_result.params.inject({}, :merge),
+      context: omni_result.context.except(:__callback_result__, :__original_component__),
+      errors: omni_service_errors_to_operations(omni_result.errors),
+      on_success: extract_callback_results(omni_result.on_success),
+      on_failure: extract_callback_results(omni_result.on_failure)
+    )
+  end
+
+  def omni_service_errors_to_operations(errors)
+    return Dry::Validation::MessageSet.new([]).freeze if errors.empty?
+
+    messages = errors.map { |error| omni_error_to_message(error) }
+    Dry::Validation::MessageSet.new(messages).freeze
+  end
+
+  def omni_error_to_message(error)
+    path = error.path.empty? ? [nil] : error.path
+    meta = { code: error.code }.compact
+    message = error.code || error.message
+
+    contract.message_resolver.call(message: message, path: path, tokens: error.tokens, meta: meta)
+  end
+
+  # Convert OmniService errors to Operations-style hash format { path => [messages] }
+  def omni_errors_to_hash(errors)
+    errors.group_by { |e| e.path.empty? ? nil : e.path.first }.transform_values do |group|
+      group.map(&:message)
+    end
+  end
+
+  def extract_callback_results(results)
+    results.filter_map do |result|
+      callback_result = case result
+      when OmniService::Result
+        result.context[:__callback_result__]
+      when Concurrent::Promises::Future
+        result.value!
+      else
+        result
+      end
+
+      # Skip nil results (callbacks that weren't invoked due to component check)
+      callback_result
     end
   end
 

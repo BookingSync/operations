@@ -100,7 +100,7 @@ class Operations::Result
 
   def errors_with_code?(name, *names)
     names = [name] + names
-    (errors.map { |error| error.meta[:code] } & names).present?
+    errors.map { |error| error.meta[:code] }.intersect?(names)
   end
 
   def context_to_hash

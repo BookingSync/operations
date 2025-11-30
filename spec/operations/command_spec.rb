@@ -27,9 +27,9 @@ RSpec.describe Operations::Command do
   let(:policies) { [policy] }
   let(:preconditions) { [->(error:, **) { error }] }
   let(:idempotency_checks) { [] }
-  let(:on_success) { [->(**) { Dry::Monads::Success(:yay) }] }
+  let(:on_success) { [->(**) { Dry::Monads::Success(result: :yay) }] }
   let(:on_failure) { [on_failure_callback] }
-  let(:on_failure_callback) { ->(_, **) { Dry::Monads::Success(:wow) } }
+  let(:on_failure_callback) { ->(_, **) { Dry::Monads::Success(result: :wow) } }
   let(:command_options) { {} }
 
   describe ".new" do
@@ -54,6 +54,7 @@ RSpec.describe Operations::Command do
     let(:operation_class) do
       Class.new do
         extend Dry::Initializer
+
         option :repo
 
         def call; end
@@ -64,6 +65,7 @@ RSpec.describe Operations::Command do
         end)
         const_set(:Policy, Class.new do
           extend Dry::Initializer
+
           option :repo
 
           def call; end
@@ -88,6 +90,7 @@ RSpec.describe Operations::Command do
       before do
         operation_class.const_set(:Precondition, Class.new do
           extend Dry::Initializer
+
           option :repo
 
           def call; end
@@ -334,7 +337,7 @@ RSpec.describe Operations::Command do
             component: :operation,
             params: { name: "Batman" },
             context: { admin: true, error: nil, additional: :value },
-            on_success: [Dry::Monads::Success(:yay)],
+            on_success: [an_instance_of(Operations::Result) & have_attributes(context: { result: :yay }, errors: [])],
             on_failure: [],
             errors: be_empty
           )
@@ -404,7 +407,8 @@ RSpec.describe Operations::Command do
               params: { name: "Batman" },
               context: { admin: true, error: nil },
               on_success: [],
-              on_failure: [Dry::Monads::Success(:wow)],
+              on_failure: [an_instance_of(Operations::Result) & have_attributes(context: { result: :wow },
+                errors: [])],
               errors: have_attributes(
                 to_h: { nil => ["Error"] }
               )
@@ -413,10 +417,6 @@ RSpec.describe Operations::Command do
 
         context "when on_failure callback failed" do
           let(:on_failure_callback) { ->(_, **) { Dry::Monads::Failure(:wow) } }
-          let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
-          let(:error_reporter) { -> {} }
-
-          before { allow(error_reporter).to receive(:call) }
 
           it "returns a normalized operation result" do
             expect { call }.not_to change { User.count }
@@ -428,7 +428,8 @@ RSpec.describe Operations::Command do
                 params: { name: "Batman" },
                 context: { admin: true, error: nil },
                 on_success: [],
-                on_failure: [Dry::Monads::Failure(:wow)],
+                on_failure: [an_instance_of(Operations::Result) &
+                  have_attributes(errors: have_attributes(to_a: [have_attributes(meta: { code: :wow })]))],
                 errors: have_attributes(
                   to_h: { nil => ["Error"] }
                 )
@@ -436,10 +437,6 @@ RSpec.describe Operations::Command do
             expect(on_failure_callback).to have_received(:call).with(
               { name: "Batman" },
               { admin: true, error: nil, operation_failure: { nil => ["Error"] } }
-            )
-            expect(error_reporter).to have_received(:call).with(
-              "Operation on_failure side-effects went sideways",
-              include(:result)
             )
           end
         end
@@ -454,7 +451,7 @@ RSpec.describe Operations::Command do
             component: :operation,
             params: { name: "Batman" },
             context: { admin: true, error: nil, additional: :value },
-            on_success: [Dry::Monads::Success(:yay)],
+            on_success: [an_instance_of(Operations::Result) & have_attributes(context: { result: :yay }, errors: [])],
             on_failure: [],
             errors: be_empty
           )
@@ -462,12 +459,8 @@ RSpec.describe Operations::Command do
 
       context "when on_success callback failed but there is a wrapping transaction" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
-        let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
-        let(:error_reporter) { -> {} }
 
-        before { allow(error_reporter).to receive(:call) }
-
-        it "returns a normalized operation result" do
+        it "returns a normalized operation result with callback results captured" do
           ActiveRecord::Base.transaction do
             expect { call }.to change { User.count }.by(1)
             expect(call)
@@ -477,26 +470,17 @@ RSpec.describe Operations::Command do
                 component: :operation,
                 params: { name: "Batman" },
                 context: { admin: true, error: nil, additional: :value },
-                on_success: [],
+                on_success: [an_instance_of(Operations::Result) &
+                  have_attributes(errors: have_attributes(to_a: [have_attributes(meta: { code: :yay })]))],
                 on_failure: [],
                 errors: be_empty
               )
-            expect(error_reporter).not_to have_received(:call)
           end
-
-          expect(error_reporter).to have_received(:call).with(
-            "Operation on_success side-effects went sideways",
-            include(:result)
-          )
         end
       end
 
       context "when on_success callback failed" do
         let(:on_success) { [->(**) { Dry::Monads::Failure(:yay) }] }
-        let(:command_options) { { configuration: Operations.default_config.new(error_reporter: error_reporter) } }
-        let(:error_reporter) { -> {} }
-
-        before { allow(error_reporter).to receive(:call) }
 
         it "returns a normalized operation result" do
           expect { call }.to change { User.count }.by(1)
@@ -507,14 +491,120 @@ RSpec.describe Operations::Command do
               component: :operation,
               params: { name: "Batman" },
               context: { admin: true, error: nil, additional: :value },
-              on_success: [Dry::Monads::Failure(:yay)],
+              on_success: [an_instance_of(Operations::Result) &
+                have_attributes(errors: have_attributes(to_a: [have_attributes(meta: { code: :yay })]))],
               on_failure: [],
               errors: be_empty
             )
-          expect(error_reporter).to have_received(:call).with(
-            "Operation on_success side-effects went sideways",
-            include(:result)
-          )
+        end
+      end
+
+      context "when on_success callback returns non-monad value" do
+        let(:on_success) { [->(**) { :not_a_monad }] }
+
+        it "raises an error" do
+          expect { call }.to raise_error(RuntimeError, %r{Invalid callable result})
+        end
+      end
+
+      context "when on_success callback raises an exception" do
+        let(:on_success) { [->(**) { raise "Callback error" }] }
+
+        it "propagates the exception" do
+          expect { call }.to raise_error(RuntimeError, "Callback error")
+        end
+      end
+
+      context "when on_failure callback raises an exception" do
+        let(:operation) { ->(**) { Dry::Monads::Failure("Error") } }
+        let(:on_failure) { [->(_, **) { raise "Failure callback error" }] }
+
+        it "propagates the exception" do
+          expect { call }.to raise_error(RuntimeError, "Failure callback error")
+        end
+      end
+
+      context "when on_success callback uses (params, **context) signature" do
+        let(:on_success) { [->(params, **context) { Dry::Monads::Success(params: params, keys: context.keys) }] }
+
+        it "receives params and context" do
+          expect(call)
+            .to be_success
+            .and have_attributes(
+              on_success: [an_instance_of(Operations::Result) & have_attributes(
+                context: { params: { name: "Batman" }, keys: %i[admin error additional] }
+              )]
+            )
+        end
+      end
+
+      context "when on_success callback uses (operation_result) signature" do
+        let(:on_success) { [->(result) { Dry::Monads::Success(params: result.params, component: result.component) }] }
+
+        it "receives the operation result" do
+          expect(call)
+            .to be_success
+            .and have_attributes(
+              on_success: [an_instance_of(Operations::Result) & have_attributes(
+                context: { params: { name: "Batman" }, component: :operation }
+              )]
+            )
+        end
+      end
+
+      context "when on_failure callback uses (operation_result) signature" do
+        let(:operation) { ->(**) { Dry::Monads::Failure("Error") } }
+        let(:on_failure) { [->(result) { Dry::Monads::Success(failure: result.context[:operation_failure]) }] }
+
+        it "receives the operation result with operation_failure in context" do
+          expect(call)
+            .to be_failure
+            .and have_attributes(
+              on_failure: [an_instance_of(Operations::Result) & have_attributes(
+                context: { failure: { nil => ["Error"] } }
+              )]
+            )
+        end
+      end
+
+      context "with multiple on_success callbacks" do
+        let(:on_success) do
+          [
+            ->(**) { Dry::Monads::Success(first: true) },
+            ->(**) { Dry::Monads::Success(second: true) }
+          ]
+        end
+
+        it "calls all callbacks and collects results" do
+          expect(call)
+            .to be_success
+            .and have_attributes(
+              on_success: [
+                an_instance_of(Operations::Result) & have_attributes(context: { first: true }),
+                an_instance_of(Operations::Result) & have_attributes(context: { second: true })
+              ]
+            )
+        end
+      end
+
+      context "with multiple on_failure callbacks" do
+        let(:operation) { ->(**) { Dry::Monads::Failure("Error") } }
+        let(:on_failure) do
+          [
+            ->(_, **) { Dry::Monads::Success(first: true) },
+            ->(_, **) { Dry::Monads::Success(second: true) }
+          ]
+        end
+
+        it "calls all callbacks and collects results" do
+          expect(call)
+            .to be_failure
+            .and have_attributes(
+              on_failure: [
+                an_instance_of(Operations::Result) & have_attributes(context: { first: true }),
+                an_instance_of(Operations::Result) & have_attributes(context: { second: true })
+              ]
+            )
         end
       end
     end
@@ -998,8 +1088,7 @@ RSpec.describe Operations::Command do
         "form_base" => "DummyOperation::FormBase",
         "form_class" => "DummyOperation::FormClass",
         "form_hydrator" => "DummyOperation::FormHydrator",
-        "form_model_map" => { "[:attribute]" => "attribute_map" },
-        "configuration" => { "after_commit" => {}, "error_reporter" => {}, "transaction" => {} }
+        "form_model_map" => { "[:attribute]" => "attribute_map" }
       )
     end
   end
@@ -1028,9 +1117,7 @@ RSpec.describe Operations::Command do
                model_class=nil,
                model_attribute=nil,
                form=nil>}>,
-         form_hydrator=#<Proc:0x>,
-         configuration=#<Operations::Configuration info_reporter=nil \
-        error_reporter=#<Proc:0x> transaction=#<Proc:0x> after_commit=#<Proc:0x>>>
+         form_hydrator=#<Proc:0x>>
       INSPECT
     end
   end

@@ -108,7 +108,7 @@ Where `Operations::Contract` is actually a [Dry::Validation::Contract](https://d
 
 Everything in the framework is built with the composition over inheritance approach in mind. An instance of `Operations::Command` essentially runs a pipeline through the steps passed into the initializer. In this particular case, the passed parameters will be validated by the contract and if everything is good, will be passed into the operation body.
 
-**Important:** the whole operation pipeline (except [callbacks](#callbacks-on-success-on-failure)) is wrapped within a transaction by default. This behavior can be adjusted by changing `Operations::Configuration#transaction` (see [Configuration](#configuration) section).
+**Important:** the whole operation pipeline (except [callbacks](#callbacks-on-success-on-failure)) is wrapped within a transaction by default.
 
 ### Operation Result
 
@@ -352,24 +352,6 @@ end
 `ActiveRecordRepository#create` returns a proper Success() monad which will become a part of `Operation::Result#context` returned by Composite or a properly built Failure() monad which will be incorporated into `Operation::Result#errors`.
 
 Of course, it is possible to use [dry-auto_inject](https://dry-rb.org/gems/dry-auto_inject/) along with [dry-container](https://dry-rb.org/gems/dry-container/) to make things even fancier.
-
-### Configuration
-
-The gem has a global default configuration:
-
-```ruby
-Operations.configure(
-  error_reporter: -> (message, payload) { Sentry.capture_message(message, extra: payload) },
-)
-```
-
-But also, a configuration instance can be passed directly to a Command initializer (for example, to switch off the wrapping DB transaction for a single operation):
-
-```ruby
-Operations::Command.new(..., configuration: Operations.default_config.new(transaction: -> {}))
-```
-
-It is possible to call `configuration_instance.new` to receive an updated configuration instance since it is a `Dry::Struct`
 
 ### Preconditions
 
@@ -701,9 +683,7 @@ Sometimes we need to run further application state modifications outside of the 
 
 The key difference besides one running after operation success and another - after failure, is that `on_success` runs after the transaction commit. This means that if one operation calls another operation inside of it and the inner one has `on_success` callbacks defined - the callbacks are going to be executed only after the outermost transaction is committed successfully.
 
-To achieve this, the framework utilizes the [after_commit_everywhere](https://github.com/Envek/after_commit_everywhere) gem and the behavior is configurable using `Operations::Configuration#after_commit` option.
-
-It is a good idea to use these callbacks to schedule some jobs instead of just running inline code since if callback execution fails - the failure will be ignored and the operation is still going to be successful. Though the failure from both callbacks will be reported using `Operations::Configuration#error_reporter` and using Sentry by default.
+Transaction handling and callback scheduling are managed by [OmniService](https://rubygems.org/gems/omni_service), which uses Rails' native `transaction.after_commit` mechanism (requires Rails 7.2+).
 
 ```ruby
 class Comment::Update

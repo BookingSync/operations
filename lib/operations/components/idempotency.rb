@@ -13,21 +13,15 @@ require "operations/components/prechecks"
 # to the result context in order to enrich it (the failure should
 # contain something that operation body would return normally
 # to mimic a proper operation call result).
-#
-# Component logs the failed check with `error_reporter`.
 class Operations::Components::Idempotency < Operations::Components::Prechecks
   def call(params, context)
-    failure, failed_check = process_callables(params, context)
+    failure, _failed_check = process_callables(params, context)
 
     if failure
-      new_result = result(
+      Failure(result(
         params: params,
         context: context.merge(failure.failure)
-      )
-
-      report_failure(new_result, failed_check)
-
-      Failure(new_result)
+      ))
     else
       Success(result(
         params: params,
@@ -58,13 +52,5 @@ class Operations::Components::Idempotency < Operations::Components::Prechecks
     end
 
     [failure, failed_check]
-  end
-
-  def report_failure(result, failed_check)
-    info_reporter&.call(
-      "Idempotency check failed",
-      result: result.as_json(include_command: true),
-      failed_check: failed_check.inspect
-    )
   end
 end

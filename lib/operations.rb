@@ -8,11 +8,10 @@ require "active_support/core_ext/class/attribute"
 require "active_support/core_ext/module/delegation"
 require "active_support/inflector/inflections"
 require "active_model/naming"
-require "after_commit_everywhere"
+require "omni_service"
 require "operations/version"
 require "operations/types"
 require "operations/inspect"
-require "operations/configuration"
 require "operations/contract"
 require "operations/contract/messages_resolver"
 require "operations/convenience"
@@ -26,24 +25,7 @@ require "operations/result"
 
 # The root gem module
 module Operations
-  class Error < StandardError
-  end
+end
 
-  DEFAULT_ERROR_REPORTER = ->(message, payload) { Sentry.capture_message(message, extra: payload) }
-  DEFAULT_TRANSACTION = ->(&block) { ActiveRecord::Base.transaction(requires_new: true, &block) }
-  DEFAULT_AFTER_COMMIT = ->(&block) { AfterCommitEverywhere.after_commit(&block) }
-
-  class << self
-    attr_reader :default_config
-
-    def configure(configuration = nil, **options)
-      @default_config = (configuration || Configuration).new(**options)
-    end
-  end
-
-  configure(
-    error_reporter: DEFAULT_ERROR_REPORTER,
-    transaction: DEFAULT_TRANSACTION,
-    after_commit: DEFAULT_AFTER_COMMIT
-  )
+class Operations::Error < StandardError
 end

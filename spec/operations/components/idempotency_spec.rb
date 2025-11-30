@@ -1,12 +1,9 @@
 # frozen_string_literal: true
 
 RSpec.describe Operations::Components::Idempotency do
-  subject(:component) { described_class.new(idempotency_checks, info_reporter: info_reporter) }
+  subject(:component) { described_class.new(idempotency_checks) }
 
   let(:idempotency_checks) { [->(_, **) { Dry::Monads::Success(unused: :value) }] }
-  let(:info_reporter) { instance_double(Proc) }
-
-  before { allow(info_reporter).to receive(:call) }
 
   describe "#call" do
     subject(:call) { component.call(params, context) }
@@ -34,21 +31,6 @@ RSpec.describe Operations::Components::Idempotency do
               errors: be_empty
             )
           )
-        expect(info_reporter).to have_received(:call).with(
-          "Idempotency check failed",
-          {
-            failed_check: %r{#<Proc:},
-            result: {
-              command: nil,
-              component: :idempotency,
-              context: { subject: "Integer", additional: "Symbol" },
-              errors: {},
-              on_failure: [],
-              on_success: [],
-              params: { name: "Batman" }
-            }
-          }
-        )
       end
     end
 
@@ -67,7 +49,6 @@ RSpec.describe Operations::Components::Idempotency do
               errors: be_empty
             )
           )
-        expect(info_reporter).not_to have_received(:call)
       end
     end
 
@@ -83,7 +64,6 @@ RSpec.describe Operations::Components::Idempotency do
             errors: be_empty
           )
         )
-      expect(info_reporter).not_to have_received(:call)
     end
   end
 end

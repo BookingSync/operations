@@ -19,15 +19,13 @@ class Operations::Components::Base
 
   param :callable, type: Operations::Types.Interface(:call)
   option :message_resolver, type: Operations::Types.Interface(:call), optional: true
-  option :info_reporter, type: Operations::Types::Nil | Operations::Types.Interface(:call), optional: true
-  option :error_reporter, type: Operations::Types::Nil | Operations::Types.Interface(:call), optional: true
 
   private
 
-  def result(**options)
+  def result(**)
     ::Operations::Result.new(
       component: self.class.name.demodulize.underscore.to_sym,
-      **options
+      **
     )
   end
 
