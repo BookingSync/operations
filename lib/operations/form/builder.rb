@@ -7,7 +7,7 @@
 class Operations::Form::Builder
   extend Dry::Initializer
 
-  NESTED_ATTRIBUTES_SUFFIX = %r{_attributes\z}.freeze
+  NESTED_ATTRIBUTES_SUFFIX = %r{_attributes\z}
 
   option :base_class, Operations::Types::Instance(Class)
 

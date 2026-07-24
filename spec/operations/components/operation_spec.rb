@@ -35,7 +35,7 @@ RSpec.describe Operations::Components::Operation do
     let(:context) { { subject: 42, entity: "Entity" } }
 
     context "when operation returns a failure" do
-      let(:operation) { ->(**) { Dry::Monads::Failure([error: :failure]) } }
+      let(:operation) { ->(**) { Dry::Monads::Failure([{ error: :failure }]) } }
 
       it "renders it as an error" do
         expect(call)

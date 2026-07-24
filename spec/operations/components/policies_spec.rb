@@ -53,8 +53,10 @@ RSpec.describe Operations::Components::Policies do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized!",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized!",
+                    code: :unauthorized
+                  }
                 ]
               }
             )
@@ -83,8 +85,10 @@ RSpec.describe Operations::Components::Policies do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Failure 1",
-                  code: :failure1
+                  {
+                    text: "Failure 1",
+                    code: :failure1
+                  }
                 ]
               }
             )
@@ -114,8 +118,10 @@ RSpec.describe Operations::Components::Policies do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized!",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized!",
+                    code: :unauthorized
+                  }
                 ]
               }
             )
@@ -138,8 +144,10 @@ RSpec.describe Operations::Components::Policies do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Failure 1",
-                  code: :failure1
+                  {
+                    text: "Failure 1",
+                    code: :failure1
+                  }
                 ]
               }
             )

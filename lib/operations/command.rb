@@ -286,8 +286,8 @@ class Operations::Command
 
   # Returns boolean result instead of Operations::Result for validate method.
   # True on success and false on failure.
-  def valid?(*args, **kwargs)
-    validate(*args, **kwargs).success?
+  def valid?(*, **)
+    validate(*, **).success?
   end
 
   def to_hash

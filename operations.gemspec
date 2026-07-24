@@ -14,9 +14,12 @@ Gem::Specification.new do |spec|
   spec.license       = "MIT"
   spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
-  spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/BookingSync/operations"
-  spec.metadata["changelog_uri"] = "https://github.com/BookingSync/operations"
+  spec.metadata = {
+    "homepage_uri" => spec.homepage,
+    "source_code_uri" => "https://github.com/BookingSync/operations",
+    "changelog_uri" => "https://github.com/BookingSync/operations",
+    "rubygems_mfa_required" => "true"
+  }
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
@@ -44,7 +47,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency "dry-monads"
   spec.add_dependency "dry-struct"
   spec.add_dependency "dry-validation"
-  spec.metadata = {
-    "rubygems_mfa_required" => "true"
-  }
 end

@@ -54,6 +54,7 @@ RSpec.describe Operations::Command do
     let(:operation_class) do
       Class.new do
         extend Dry::Initializer
+
         option :repo
 
         def call; end
@@ -64,6 +65,7 @@ RSpec.describe Operations::Command do
         end)
         const_set(:Policy, Class.new do
           extend Dry::Initializer
+
           option :repo
 
           def call; end
@@ -88,6 +90,7 @@ RSpec.describe Operations::Command do
       before do
         operation_class.const_set(:Precondition, Class.new do
           extend Dry::Initializer
+
           option :repo
 
           def call; end
@@ -242,8 +245,10 @@ RSpec.describe Operations::Command do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized",
+                    code: :unauthorized
+                  }
                 ]
               }
             )
@@ -269,8 +274,10 @@ RSpec.describe Operations::Command do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized",
+                    code: :unauthorized
+                  }
                 ]
               }
             )
@@ -663,8 +670,10 @@ RSpec.describe Operations::Command do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized",
+                    code: :unauthorized
+                  }
                 ]
               }
             )
@@ -749,8 +758,10 @@ RSpec.describe Operations::Command do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized",
+                    code: :unauthorized
+                  }
                 ]
               }
             )
@@ -828,8 +839,10 @@ RSpec.describe Operations::Command do
             errors: have_attributes(
               to_h: {
                 nil => [
-                  text: "Unauthorized",
-                  code: :unauthorized
+                  {
+                    text: "Unauthorized",
+                    code: :unauthorized
+                  }
                 ]
               }
             )

@@ -58,10 +58,10 @@ class Operations::Form
     option :base_class, type: Operations::Types::Class, default: proc { ::Operations::Form::Base }
   end)
 
-  def initialize(command, hydrator: nil, hydrators: [], model_name: nil, **options)
+  def initialize(command, hydrator: nil, hydrators: [], model_name: nil, **)
     hydrators.push(hydrator) if hydrator.present?
 
-    super(command, hydrators: hydrators, param_key: model_name, **options)
+    super(command, hydrators: hydrators, param_key: model_name, **)
   end
 
   def build(params = EMPTY_HASH, **context)

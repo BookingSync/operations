@@ -64,10 +64,10 @@ module Operations::Convenience
     mod.extend Dry::Initializer
   end
 
-  def method_missing(name, *args, **kwargs, &block)
+  def method_missing(name, ...)
     name_without_suffix = name.to_s.delete_suffix("!").to_sym
     if name.to_s.end_with?("!") && respond_to?(name_without_suffix)
-      public_send(name_without_suffix, *args, **kwargs, &block).method(:call!)
+      public_send(name_without_suffix, ...).method(:call!)
     else
       super
     end
@@ -77,10 +77,10 @@ module Operations::Convenience
     (name.to_s.end_with?("!") && respond_to?(name.to_s.delete_suffix("!").to_sym)) || super
   end
 
-  def contract(prefix = nil, from: OperationContract, &block)
+  def contract(prefix = nil, from: OperationContract, &)
     contract = Class.new(from)
     contract.config.messages.namespace = name.underscore
-    contract.class_eval(&block)
+    contract.class_eval(&)
     const_set(:"#{prefix.to_s.camelize}Contract", contract)
   end
 
