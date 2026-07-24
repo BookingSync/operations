@@ -60,8 +60,8 @@ class Operations::Form::Base
       end
     end
 
-    def attribute(name, **options)
-      attribute = Operations::Form::Attribute.new(name, **options)
+    def attribute(name, **)
+      attribute = Operations::Form::Attribute.new(name, **)
 
       self.attributes = attributes.merge(
         attribute.name => attribute
@@ -100,7 +100,7 @@ class Operations::Form::Base
       self.class.attributes[name.to_sym].model_type
     end
 
-    def has_attribute?(name) # rubocop:disable Naming/PredicateName
+    def has_attribute?(name) # rubocop:disable Naming/PredicatePrefix
       self.class.attributes.key?(name.to_sym)
     end
 
@@ -117,7 +117,7 @@ class Operations::Form::Base
     end
 
     # For now we gracefully return nil for unknown methods
-    def method_missing(name, *args, **kwargs)
+    def method_missing(name, *, **)
       build_attribute_name = build_attribute_name(name)
       build_attribute = self.class.attributes[build_attribute_name]
       plural_build_attribute = self.class.attributes[build_attribute_name.to_s.pluralize.to_sym]
@@ -125,9 +125,9 @@ class Operations::Form::Base
       if has_attribute?(name)
         read_attribute(name)
       elsif build_attribute&.form
-        build_attribute.form.new(*args, **kwargs)
+        build_attribute.form.new(*, **)
       elsif plural_build_attribute&.form
-        plural_build_attribute.form.new(*args, **kwargs)
+        plural_build_attribute.form.new(*, **)
       elsif operation_result
         operation_result.context[name]
       end

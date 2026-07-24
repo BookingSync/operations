@@ -36,8 +36,8 @@ module Operations
   class << self
     attr_reader :default_config
 
-    def configure(configuration = nil, **options)
-      @default_config = (configuration || Configuration).new(**options)
+    def configure(configuration = nil, **)
+      @default_config = (configuration || Configuration).new(**)
     end
   end
 

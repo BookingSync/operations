@@ -24,10 +24,10 @@ class Operations::Components::Base
 
   private
 
-  def result(**options)
+  def result(**)
     ::Operations::Result.new(
       component: self.class.name.demodulize.underscore.to_sym,
-      **options
+      **
     )
   end
 

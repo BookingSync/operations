@@ -12,11 +12,14 @@ Gem::Specification.new do |spec|
   spec.description   = "Operations framework"
   spec.homepage      = "https://github.com/BookingSync/operations"
   spec.license       = "MIT"
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.7.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
-  spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/BookingSync/operations"
-  spec.metadata["changelog_uri"] = "https://github.com/BookingSync/operations"
+  spec.metadata = {
+    "homepage_uri" => spec.homepage,
+    "source_code_uri" => "https://github.com/BookingSync/operations",
+    "changelog_uri" => "https://github.com/BookingSync/operations",
+    "rubygems_mfa_required" => "true"
+  }
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
@@ -29,6 +32,13 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "appraisal"
   spec.add_development_dependency "database_cleaner-active_record"
+  # Optional integrations exercised by the specs for `operations/sidekiq`.
+  # These are NOT runtime dependencies of the gem: `operations/sidekiq` must be
+  # required explicitly and expects the host application to provide Sidekiq
+  # (and, when used, Money / GlobalID).
+  spec.add_development_dependency "globalid"
+  spec.add_development_dependency "money"
+  spec.add_development_dependency "sidekiq", ">= 6.3"
   spec.add_development_dependency "sqlite3", ">= 1.4"
 
   spec.add_dependency "activerecord", ">= 5.2.0"
@@ -37,7 +47,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency "dry-monads"
   spec.add_dependency "dry-struct"
   spec.add_dependency "dry-validation"
-  spec.metadata = {
-    "rubygems_mfa_required" => "true"
-  }
 end

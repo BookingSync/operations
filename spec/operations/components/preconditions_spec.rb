@@ -201,7 +201,7 @@ RSpec.describe Operations::Components::Preconditions do
             end
           end,
           Class.new do
-            def self.call(subject1:, subject3: nil, **); end
+            def self.call(subject1:, subject3: nil, **); end # rubocop:disable Lint/DuplicateMethods
 
             def self.context_keys
               %i[subject1 subject4]
