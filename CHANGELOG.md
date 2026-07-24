@@ -9,6 +9,7 @@
 
 ### Changes
 
+- Require Ruby >= 3.2 and drop Rails < 7.1 from the CI / appraisal matrix (the optional `operations/sidekiq` integration relies on a modern Sidekiq).
 - Changed `Operations::Command::OperationFailed#message` to include detailed error messages. [\#55](https://github.com/BookingSync/operations/pull/55) ([Azdaroth](https://github.com/Azdaroth))
 - Rename Operations::Form#model_name parameter to param_key and make it public preserving backwards compatibility. [\#52](https://github.com/BookingSync/operations/pull/52) ([pyromaniac](https://github.com/pyromaniac))
 

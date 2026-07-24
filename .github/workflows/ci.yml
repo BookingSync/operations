@@ -6,10 +6,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { ruby: '2.7', rails: '5.2' }
-          - { ruby: '2.7', rails: '6.0' }
-          - { ruby: '3.0', rails: '6.1' }
-          - { ruby: '3.1', rails: '7.0' }
           - { ruby: '3.2', rails: '7.1' }
           - { ruby: '3.3', rails: '7.2' }
           - { ruby: '3.4', rails: '8.0' }
@@ -30,6 +26,6 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 2.7
+        ruby-version: '3.2'
         bundler-cache: true
     - run: bundle exec rubocop
