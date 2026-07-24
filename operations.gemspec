@@ -29,6 +29,13 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "appraisal"
   spec.add_development_dependency "database_cleaner-active_record"
+  # Optional integrations exercised by the specs for `operations/sidekiq`.
+  # These are NOT runtime dependencies of the gem: `operations/sidekiq` must be
+  # required explicitly and expects the host application to provide Sidekiq
+  # (and, when used, Money / GlobalID).
+  spec.add_development_dependency "globalid"
+  spec.add_development_dependency "money"
+  spec.add_development_dependency "sidekiq", ">= 6.3"
   spec.add_development_dependency "sqlite3", ">= 1.4"
 
   spec.add_dependency "activerecord", ">= 5.2.0"

@@ -851,6 +851,83 @@ In this case, `Order::MarkAsCompleted.system.call(...)` will be used in, say, co
 
 `Operations::Convenience` is an optional module that contains helpers for simpler operation definitions. See module documentation for more details.
 
+### Asynchronous execution (Sidekiq)
+
+Any operation can be executed asynchronously via Sidekiq. This part of the
+framework is optional and must be required explicitly:
+
+```ruby
+require "operations/sidekiq"
+```
+
+It expects Sidekiq to be available in the host application. `Money` and
+GlobalID-able objects are serialized transparently when those libraries are
+loaded, but they are not hard dependencies of the gem.
+
+The simplest way to schedule an operation is `Operations::Sidekiq::Convenience`.
+It exposes a `<name>_async` (and `<name>_try_async`) counterpart for every
+singleton method that returns a command:
+
+```ruby
+class Rental::Create
+  extend Operations::Sidekiq::Convenience
+
+  def self.default
+    @default ||= Operations::Command.new(...)
+  end
+end
+
+# Enqueues a job that runs `Rental::Create.default.call!(params, **context)`
+Rental::Create.default_async.call(params, **context)
+
+# Same, but `try_call!` instead of `call!`
+Rental::Create.default_try_async.call(params, **context)
+
+# Scheduling / queue options
+Rental::Create.default_async.in(5.minutes).set(queue: :slow).call(params, **context)
+Rental::Create.default_async.at(1.hour.from_now).call(params, **context)
+```
+
+Default Sidekiq options, a custom job class, a default delay and a
+retries-exhausted callback can be configured per operation:
+
+```ruby
+class Rental::Create
+  extend Operations::Sidekiq::Convenience[
+    queue: :important,
+    on_retries_exhausted: Rental::NotifyFailure.default
+  ]
+  # ...
+end
+```
+
+`Operations::Sidekiq::Command` can also be used directly when you need more
+control, and `Operations::Sidekiq::Serializer` / `Operations::Sidekiq::Deserializer`
+handle encoding richer argument types (`Time`, `Date`, `BigDecimal`, `Symbol`,
+`Range`, `Module`/`Class`, `Dry::Struct`, `Money`, GlobalID-able objects and
+symbol-keyed hashes) that Sidekiq does not support out of the box.
+
+Jobs are executed by `Operations::Sidekiq::Job`. To add application-specific
+instrumentation (for example a Sentry scope or a transaction name) subclass it
+and override `#instrument`. Naming the subclass explicitly also keeps the
+enqueued job class name stable in Redis:
+
+```ruby
+class OperationJob < Operations::Sidekiq::Job
+  private
+
+  def instrument(container_class)
+    Sentry.configure_scope do |scope|
+      scope.set_transaction_name("Sidekiq/OperationJob/#{container_class}")
+      yield
+    end
+  end
+end
+
+# Point operations at your job class through the convenience configuration:
+extend Operations::Sidekiq::Convenience[job_class: OperationJob]
+```
+
 ### Form objects
 
 Form objects were refactored to be separate from Command. Please check [UPGRADING_FORMS.md](UPGRADING_FORMS.md) for more details.

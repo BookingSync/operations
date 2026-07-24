@@ -2,6 +2,12 @@
 
 require "bundler/setup"
 require "operations"
+require "operations/sidekiq"
+require "sidekiq/testing"
+require "active_support/time"
+# Optional serialization integrations exercised by the operations/sidekiq specs.
+require "money"
+require "globalid"
 require "pp"
 require "active_record"
 require "database_cleaner-active_record"
@@ -9,6 +15,9 @@ require "./spec/support/test_helpers"
 
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 ActiveRecord::Base.logger = Logger.new(nil)
+
+Time.zone = "UTC" # rubocop:disable Rails/TimeZoneAssignment
+Sidekiq::Testing.fake!
 
 ActiveRecord::Schema.define do
   create_table :users do |t|
@@ -49,5 +58,13 @@ RSpec.configure do |config|
     DatabaseCleaner.cleaning do
       example.run
     end
+  end
+
+  config.around(:each, :inline_jobs) do |example|
+    Sidekiq::Testing.inline! { example.run }
+  end
+
+  config.after do
+    Sidekiq::Job.clear_all
   end
 end

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add optional `operations/sidekiq` integration for asynchronous operation execution: `Operations::Sidekiq::Convenience`, `Operations::Sidekiq::Command`, `Operations::Sidekiq::Job`, and the `Serializer`/`Deserializer` that encode rich argument types over Sidekiq.
 - Allow receiving params in preconditions. [\#56](https://github.com/BookingSync/operations/pull/56) ([pyromaniac](https://github.com/pyromaniac))
 
 ### Changes
